@@ -10,6 +10,7 @@ namespace CardinalServer
     {
         static void Main(string[] args)
         {
+
         }
     }
 }
