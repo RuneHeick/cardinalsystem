@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CardinalTypes.Types;
 
 namespace CardinalServer
 {
@@ -10,6 +11,9 @@ namespace CardinalServer
     {
         static void Main(string[] args)
         {
+           
+
+            
 
         }
     }
