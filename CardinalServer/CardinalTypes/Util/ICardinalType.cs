@@ -14,7 +14,8 @@ namespace CardinalTypes.Util
         object Value { get; set; }
 
 
-        event Action<ICardinalType, object> ValueChanged; 
+        event Action<ICardinalType, object> ValueChanged;
+
 
     }
 }
