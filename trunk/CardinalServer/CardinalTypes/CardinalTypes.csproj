@@ -39,10 +39,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CardinalManager.cs" />
+    <Compile Include="Data\DataManager.cs" />
+    <Compile Include="Data\IData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Types\CardinalInt.cs" />
+    <Compile Include="Util\CardinalGroup.cs" />
+    <Compile Include="Util\CardinalGroupColider.cs" />
+    <Compile Include="Util\ICardenalCollider.cs" />
     <Compile Include="Util\ICardinalType.cs" />
-    <Compile Include="Util\InnerTypeTemplet.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
