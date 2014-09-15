@@ -8,28 +8,21 @@ namespace CardinalTypes.Data
 {
     class BiDictionary<TFirst, TSecond>
     {
-        IDictionary<TFirst, IList<TSecond>> firstToSecond = new Dictionary<TFirst, IList<TSecond>>();
-        IDictionary<TSecond, IList<TFirst>> secondToFirst = new Dictionary<TSecond, IList<TFirst>>();
-
-        private static IList<TFirst> EmptyFirstList = new TFirst[0];
-        private static IList<TSecond> EmptySecondList = new TSecond[0];
+        IDictionary<TFirst, TSecond> firstToSecond = new Dictionary<TFirst, TSecond>();
+        IDictionary<TSecond, TFirst> secondToFirst = new Dictionary<TSecond, TFirst>();
 
         public void Add(TFirst first, TSecond second)
         {
-            IList<TFirst> firsts;
-            IList<TSecond> seconds;
-            if (!firstToSecond.TryGetValue(first, out seconds))
+            firstToSecond.Add(first, second);
+            secondToFirst.Add(second, first);
+        }
+
+        public long Count
+        {
+            get
             {
-                seconds = new List<TSecond>();
-                firstToSecond[first] = seconds;
+                return firstToSecond.LongCount(); 
             }
-            if (!secondToFirst.TryGetValue(second, out firsts))
-            {
-                firsts = new List<TFirst>();
-                secondToFirst[second] = firsts;
-            }
-            seconds.Add(second);
-            firsts.Add(first);
         }
 
         public bool Contains(TFirst first)
@@ -46,32 +39,27 @@ namespace CardinalTypes.Data
         // Hence the methods as well...
         public TSecond this[TFirst first]
         {
-            get { return GetByFirst(first); }
+            get { return firstToSecond[first]; }
         }
 
         public TFirst this[TSecond second]
         {
-            get { return GetBySecond(second); }
+            get { return secondToFirst[second]; }
         }
 
-        public IList<TSecond> GetByFirst(TFirst first)
+        public void Remove(TSecond second)
         {
-            IList<TSecond> list;
-            if (!firstToSecond.TryGetValue(first, out list))
-            {
-                return EmptySecondList;
-            }
-            return new List<TSecond>(list); // Create a copy for sanity
+            TFirst temp = secondToFirst[second];
+            secondToFirst.Remove(second);
+            firstToSecond.Remove(temp);
         }
 
-        public IList<TFirst> GetBySecond(TSecond second)
+        public void Remove(TFirst first)
         {
-            IList<TFirst> list;
-            if (!secondToFirst.TryGetValue(second, out list))
-            {
-                return EmptyFirstList;
-            }
-            return new List<TFirst>(list); // Create a copy for sanity
+            TSecond temp = firstToSecond[first];
+            firstToSecond.Remove(first);
+            secondToFirst.Remove(temp);
         }
+
     }
 }
