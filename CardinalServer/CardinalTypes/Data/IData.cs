@@ -8,7 +8,6 @@ namespace CardinalTypes.Data
 {
     public interface IData
     {
-        bool IsAlive { get; set; }
 
         byte[] Serilize();
 
