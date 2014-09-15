@@ -9,99 +9,119 @@ namespace CardinalTypes.Data
 {
     public class DataManager
     {
-        HashSet<CollectionItem> ItemCache = new HashSet<CollectionItem>();
+        BiDictionary<long, CollectionItem> ItemCache = new BiDictionary<long, CollectionItem>();
         private readonly object CacheLock = new object();
-
-        Timer GCTimer;
-        const int GC_TIME = 5000; 
 
         public DataManager(string Path)
         {
-            GCTimer = null; 
+
         }
 
-        public ValueContainor Add(IData item)
+        public ManagedData this[int index]
         {
-            CollectionItem c = new CollectionItem();
-            ValueContainor V = c.Populate(item);
-            lock (CacheLock)
+            get
             {
-                
-                ItemCache.Add(c);
-                if (GCTimer == null)
-                    GCTimer = new Timer((o) => garbageCollection(), null, GC_TIME, GC_TIME);
+                if(ItemCache.Contains(index))
+                {
+                   return ItemCache[index]..Target as ManagedData; 
+                }
+                else
+                {
+                    return LoadFile(index); 
+                }
             }
-            return V; 
-        }
-        public void Remove(IData item)
-        {
-            CollectionItem collectionItem = ItemCache.FirstOrDefault((o) => o.DataValue == item); 
-            if(collectionItem != null)
+            set
             {
                 lock (CacheLock)
                 {
-                    ItemCache.Remove(collectionItem);
+                    if (ItemCache.ContainsKey(index))
+                    {
+                        var item = ItemCache[index];
+                        if (item.Ref.Target != null)
+                            (item.Ref.Target as ManagedData).DisposeFunction = null;
+                        ItemCache.Remove(index);
+                    }
                 }
+               Add(value,index); 
             }
-
-            if (ItemCache.Count == 0)
-                StopTimer();
         }
 
-        private void garbageCollection()
+        public long Add(ManagedData item, long index = 0)
+        {
+            item.DisposeFunction = garbageCollection;
+            while (ItemCache.ContainsKey(index) && index>0)
+            {
+                index++;
+            }
+            lock (CacheLock)
+                ItemCache.Add(index, new CollectionItem(item));
+
+            return index; 
+        }
+        public void Remove(ManagedData item)
+        {
+            lock (CacheLock)
+            {
+                long key = ItemCache.Keys.FirstOrDefault((o) =>
+                        {
+                            var element = ItemCache[o];
+                            if (element.Ref.Target != null)
+                                return element.Ref.Target == item;
+                            return false;
+                        });
+
+                if (key != 0)
+                {
+                    Delete(item);
+                    ItemCache.Remove(key);
+                    item.DisposeFunction = null;
+                }
+            }
+        }
+
+        private void garbageCollection(ManagedData data)
         {
             for (int i = 0; i < ItemCache.Count; i++)
             {
-                CollectionItem item = ItemCache.ElementAt(i); 
-                if(item.Value.Target == null)
+                var item = ItemCache.ElementAt(i);
+
+                if (item.Ref.Target == null || item.Ref.Target == data)
                 {
                     lock(CacheLock)
                     {
-                        ItemCache.Remove(item);
+                        ItemCache.i(item);
                     }
                     i--;
-                    SaveItem(item.DataValue);
+                    SaveItem(data);
                 }
             }
-
-            if (ItemCache.Count == 0)
-                StopTimer();
-        }
-
-        private void StopTimer()
-        {
-            GCTimer.Dispose();
-            GCTimer = null; 
-        }
-
-        private void SaveItem(IData item)
-        {
-            
         }
 
         class CollectionItem
         {
-
-            public ValueContainor Populate(IData item)
+            public CollectionItem(object target)
             {
-                ValueContainor data = new ValueContainor();
-                data.Value = item;
-                Value = new WeakReference(data);
-                DataValue = item;
-                return data;
+                Ref = new WeakReference(target);
             }
 
-            public WeakReference Value { get; set; }
-            public IData DataValue { get; set; }
+            public WeakReference Ref { get; set; }
+        }
+
+        public void Delete(ManagedData item)
+        {
+
+        }
+
+        private ManagedData LoadFile(int index)
+        {
+            
+        }
+
+        private void SaveItem(ManagedData item)
+        {
+            
         }
 
     }
-
-    public class ValueContainor
-    {
-        public IData Value { get; set; }
-
-    }
-
 
 }

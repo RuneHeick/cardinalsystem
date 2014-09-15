@@ -40,8 +40,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CardinalManager.cs" />
+    <Compile Include="Data\BiDictionary.cs" />
     <Compile Include="Data\DataManager.cs" />
     <Compile Include="Data\IData.cs" />
+    <Compile Include="Data\ManagedData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Types\CardinalInt.cs" />
     <Compile Include="Util\CardinalGroup.cs" />
