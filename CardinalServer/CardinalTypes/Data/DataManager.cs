@@ -9,91 +9,70 @@ namespace CardinalTypes.Data
 {
     public class DataManager
     {
-        BiDictionary<long, CollectionItem> ItemCache = new BiDictionary<long, CollectionItem>();
+        BiDictionary<long, WeakReference> ItemCache = new BiDictionary<long, WeakReference>();
         private readonly object CacheLock = new object();
+
+        private FileNumberNamer Namer;
+        FileManager fileHandler; 
 
         public DataManager(string Path)
         {
-
+            Namer = new FileNumberNamer(Path);
+            fileHandler = new FileManager(Path);
         }
 
         public ManagedData this[int index]
         {
             get
             {
-                if(ItemCache.Contains(index))
+                lock (CacheLock)
                 {
-                   return ItemCache[index]..Target as ManagedData; 
+                    if (ItemCache.Contains(index))
+                    {
+                        return ItemCache[index].Target as ManagedData;
+                    }
                 }
-                else
-                {
-                    return LoadFile(index); 
-                }
+
+                return fileHandler.LoadFile(index);
             }
             set
             {
-                lock (CacheLock)
-                {
-                    if (ItemCache.ContainsKey(index))
-                    {
-                        var item = ItemCache[index];
-                        if (item.Ref.Target != null)
-                            (item.Ref.Target as ManagedData).DisposeFunction = null;
-                        ItemCache.Remove(index);
-                    }
-                }
-               Add(value,index); 
+                throw new InvalidOperationException(); 
             }
         }
 
-        public long Add(ManagedData item, long index = 0)
+        public long Add(ManagedData item)
         {
-            item.DisposeFunction = garbageCollection;
-            while (ItemCache.ContainsKey(index) && index>0)
-            {
-                index++;
-            }
+            long index = Namer.GetNext(); 
             lock (CacheLock)
-                ItemCache.Add(index, new CollectionItem(item));
-
+                ItemCache.Add(index, new WeakReference(item));
+            item.DisposeFunction = (o) => garbageCollection(index,o);
             return index; 
         }
-        public void Remove(ManagedData item)
+        public void Remove(long item)
         {
             lock (CacheLock)
             {
-                long key = ItemCache.Keys.FirstOrDefault((o) =>
-                        {
-                            var element = ItemCache[o];
-                            if (element.Ref.Target != null)
-                                return element.Ref.Target == item;
-                            return false;
-                        });
-
-                if (key != 0)
+                if (ItemCache.Contains(item))
                 {
-                    Delete(item);
-                    ItemCache.Remove(key);
-                    item.DisposeFunction = null;
+                    WeakReference data = ItemCache[item];
+                    if (data != null && data.Target != null)
+                    {
+                        (data.Target as ManagedData).DisposeFunction = null;
+                    }
+                    ItemCache.Remove(item);
                 }
+                fileHandler.Delete(item);
+                Namer.FreeNumber(item); 
             }
         }
 
-        private void garbageCollection(ManagedData data)
+        private void garbageCollection(long index, ManagedData data)
         {
-            for (int i = 0; i < ItemCache.Count; i++)
+            lock (CacheLock)
             {
-                var item = ItemCache.ElementAt(i);
-
-                if (item.Ref.Target == null || item.Ref.Target == data)
-                {
-                    lock(CacheLock)
-                    {
-                        ItemCache.i(item);
-                    }
-                    i--;
-                    SaveItem(data);
-                }
+                ItemCache.Remove(index);
+                fileHandler.SaveItem(index, data);
             }
         }
 
@@ -105,21 +84,6 @@ namespace CardinalTypes.Data
             }
 
             public WeakReference Ref { get; set; }
-        }
-
-        public void Delete(ManagedData item)
-        {
-
-        }
-
-        private ManagedData LoadFile(int index)
-        {
-            
-        }
-
-        private void SaveItem(ManagedData item)
-        {
-            
         }
 
     }

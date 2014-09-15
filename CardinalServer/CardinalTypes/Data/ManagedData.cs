@@ -8,9 +8,11 @@ namespace CardinalTypes.Data
 {
     public abstract class ManagedData
     {
-        public abstract byte[] Serilize();
+        public object Data { get; set; }
 
-        public abstract void Deserize(byte[] data); 
+        public string Serilizer { get; set; }
+
+        public long ID { get; set; }
 
         internal Action<ManagedData> DisposeFunction {get; set;} 
 

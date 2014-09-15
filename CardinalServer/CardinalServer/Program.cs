@@ -22,7 +22,7 @@ namespace CardinalServer
             rune.Add(new TestItem());
             GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced);
             Console.WriteLine("pre");
-
+            Thread.Sleep(20000); 
             a = null;
 
             GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced);
