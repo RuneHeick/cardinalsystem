@@ -33,16 +33,36 @@ namespace CardinalTypes.Data
             return Serializers.ContainsKey(name);
         }
 
-        public byte[] Serilize(object Item, string SerilizerName)
+        public byte[] Serilize(object item, string SerilizerName)
         {
-
-            return null; 
+            try
+            {
+                if (Serializers.ContainsKey(SerilizerName))
+                {
+                    return Serializers[SerilizerName].Serilize(item);
+                }
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public object Deserilize(byte[] item, string SerilizerName)
         {
-
-            return null;
+            try
+            {
+                if (Serializers.ContainsKey(SerilizerName))
+                {
+                    return Serializers[SerilizerName].DeSerilize(item);
+                }
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public static SerializerManager Instance
