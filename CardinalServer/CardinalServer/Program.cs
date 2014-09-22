@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using CardinalTypes.Types;
 using CardinalTypes.Data;
 using System.Threading;
+using FileManager;
 
 namespace CardinalServer
 {
@@ -13,6 +14,8 @@ namespace CardinalServer
     {
         static void Main(string[] args)
         {
+            FileController  c = FileManager.FileController.Instance; 
+            /*
             DataManager rune = new DataManager("test");
 
 
@@ -30,11 +33,12 @@ namespace CardinalServer
             Console.WriteLine("pre2");
 
             Console.WriteLine("Done");
-            
+            */
 
         }
     }
 
+    /*
     class TestItem: ManagedData
     {
 
@@ -51,4 +55,5 @@ namespace CardinalServer
         
         
     }
+     */
 }
