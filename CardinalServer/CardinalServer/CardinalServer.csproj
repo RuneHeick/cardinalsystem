@@ -52,6 +52,10 @@
       <Project>{46e399cd-a83c-4535-a165-f0c33e4fc047}</Project>
       <Name>CardinalTypes</Name>
     </ProjectReference>
+    <ProjectReference Include="..\ConfigurationManager\ConfigurationManager.csproj">
+      <Project>{c5e6af61-4e19-497f-9004-767dfd19b727}</Project>
+      <Name>ConfigurationManager</Name>
+    </ProjectReference>
     <ProjectReference Include="..\FileManager\FileManager.csproj">
       <Project>{d7dbf800-655d-4eb3-a7dd-d8c991b88711}</Project>
       <Name>FileManager</Name>

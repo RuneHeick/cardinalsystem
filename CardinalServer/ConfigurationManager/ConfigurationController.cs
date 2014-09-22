@@ -16,7 +16,7 @@ namespace ConfigurationManager
         const string ConfigurationPath = "Configurations.txt";
         static string[] FileContent = null;
 
-        private System.Collections.Generic.Directory<string, WeakReference> LoadedConfigurations = new System.Collections.Generic.Directory<string, WeakReference>(); 
+        Dictionary<string, WeakReference> LoadedConfigurations = new Dictionary<string, WeakReference>(); 
 
         private ConfigurationController() 
         {
@@ -45,8 +45,21 @@ namespace ConfigurationManager
 
         public Configuration GetConfig(string Name)
         {
-            
-            
+            lock (FileLock)
+            {
+                if (LoadedConfigurations.ContainsKey(Name))
+                {
+                    WeakReference item = LoadedConfigurations[Name];
+                    if (item.Target != null && item.IsAlive == true)
+                    {
+                        return item.Target as Configuration;
+                    }
+                }
+
+                Configuration data = GetConfiguration(Name);
+                LoadedConfigurations.Add(Name, new WeakReference(data));
+                return data; 
+            }
         }
 
         private Configuration GetConfiguration(string Name)
@@ -89,6 +102,9 @@ namespace ConfigurationManager
         {
             lock (FileLock)
             {
+                if (LoadedConfigurations.Remove(config.Name))
+                    LoadedConfigurations.Remove(config.Name);
+
                 try
                 {
                     string[] fileLines = ReadFile();

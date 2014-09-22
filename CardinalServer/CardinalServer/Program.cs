@@ -7,6 +7,7 @@ using CardinalTypes.Types;
 using CardinalTypes.Data;
 using System.Threading;
 using FileManager;
+using ConfigurationManager;
 
 namespace CardinalServer
 {
@@ -14,7 +15,17 @@ namespace CardinalServer
     {
         static void Main(string[] args)
         {
-            FileController  c = FileManager.FileController.Instance; 
+            ConfigurationController rune = ConfigurationController.Instance;
+            {
+                Configuration config = rune.GetConfig("Test");
+
+                config.SetValue("hej med dig");
+            }
+
+            Console.WriteLine("hej");
+
+
+
             /*
             DataManager rune = new DataManager("test");
 
