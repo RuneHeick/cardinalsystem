@@ -8,12 +8,12 @@ namespace CardinalTypes.Data.Serialization
 {
     public interface ISerializer
     {
-        public string Name { get; set; }
+        string Name { get; set; }
 
 
-        public byte[] Serilize(object item);
+        byte[] Serilize(object item);
 
-        public object DeSerilize(byte[] data); 
+        object DeSerilize(byte[] data); 
 
     }
 }
