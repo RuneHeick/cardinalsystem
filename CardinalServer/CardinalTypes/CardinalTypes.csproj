@@ -41,6 +41,8 @@
   <ItemGroup>
     <Compile Include="CardinalManager.cs" />
     <Compile Include="Data\BiDictionary.cs" />
+    <Compile Include="Data\LimitedConcurrencyLevelTaskScheduler.cs" />
+    <Compile Include="Data\DataChangedEventController.cs" />
     <Compile Include="Data\DataManager.cs" />
     <Compile Include="Data\FileManager.cs" />
     <Compile Include="Data\FIleNamer.cs" />

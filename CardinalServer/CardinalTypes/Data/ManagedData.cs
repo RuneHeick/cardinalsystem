@@ -22,5 +22,8 @@ namespace CardinalTypes.Data
                 DisposeFunction(this); 
         }
 
+        public void OnDependencyPropertyChanged(ManagedData item, string Property)
+        { }
+
     }
 }
