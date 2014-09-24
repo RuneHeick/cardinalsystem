@@ -10,7 +10,7 @@ namespace CardinalTypes.Data
     {
         public object Data { get; set; }
 
-        public string Serilizer { get; set; }
+        public abstract string Serilizer { get; set; }
 
         public long ID { get; set; }
 

@@ -50,12 +50,27 @@ namespace CardinalTypes.Types
             return new CardinalInt(first.value_ + second);
         }
 
+        public static CardinalInt operator +(CardinalInt second, CardinalInt first)
+        {
+            first.Value = first.value_ + second;
+            return new CardinalInt(first.value_ + second.value_);
+        }
+
         public static CardinalInt operator -(CardinalInt first, CardinalInt second)
         {
             return new CardinalInt(first.value_ - second.value_);
         }
 
-        public event Action<ICardinalType, object> ValueChanged;
+        public static CardinalInt operator -(CardinalInt first, int second)
+        {
+            first.Value = first.value_ - second;
+            return new CardinalInt(first.value_ - second);
+        }
 
+        public static CardinalInt operator -(int second, CardinalInt first)
+        {
+            first.Value = first.value_ - second;
+            return new CardinalInt(first.value_ - second);
+        }
     }
 }

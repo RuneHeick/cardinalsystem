@@ -13,9 +13,8 @@ namespace CardinalTypes.Util
 
         object Value { get; set; }
 
+        byte[] ToByte(); 
 
-        event Action<ICardinalType, object> ValueChanged;
-
-
+        void FromByte(byte[] data); 
     }
 }
