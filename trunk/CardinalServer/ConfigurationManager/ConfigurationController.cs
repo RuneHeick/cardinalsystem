@@ -11,6 +11,7 @@ namespace ConfigurationManager
     {
         private static volatile ConfigurationController instance;
         private static object syncRoot = new Object();
+
         private readonly object FileLock = new object(); 
 
         const string ConfigurationPath = "Configurations.txt";
@@ -80,8 +81,11 @@ namespace ConfigurationManager
                         {
                             if(info[0] == group)
                                 foundGrup = true; 
-                            else
+                            else if(foundGrup == true)
+                            {
                                 foundGrup = false; 
+                                break; 
+                            }
                         }
 
                         if (info.Length > 1)
@@ -107,6 +111,49 @@ namespace ConfigurationManager
 
             }
 
+        }
+
+        public List<Configuration> GetConfigurations(string group)
+        {
+            List<Configuration> Configurations = new List<Configuration>(); 
+            lock (FileLock)
+            {
+                bool foundGrup = false;
+                string[] fileLines = ReadFile();
+                if (fileLines != null)
+                {
+                    foreach (string line in fileLines)
+                    {
+                        if (line.TrimStart().StartsWith("#"))
+                            continue;
+
+                        string[] info = line.Split('=');
+
+                        if (info.Length == 1)
+                        {
+                            if (info[0] == group)
+                                foundGrup = true;
+                            else
+                                foundGrup = false;
+                        }
+
+                        if (info.Length > 1)
+                        {
+                            if (foundGrup == true)
+                            {
+                                Configuration ret = new Configuration(SetConfigurationFile);
+                                ret.Name = info[0];
+                                ret.SetValue(info[1]);
+                                ret.Group = group;
+                                Configurations.Add(ret);
+                            }
+                        }
+                    }
+                }
+
+                return Configurations; 
+
+            }
         }
 
         private void SetConfigurationFile(Configuration config)
