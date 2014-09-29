@@ -17,9 +17,10 @@ namespace CardinalServer
         {
             ConfigurationController rune = ConfigurationController.Instance;
             {
-                Configuration config = rune.GetConfig("Test");
-
-                config.SetValue("hej med dig");
+                Configuration config = rune.GetConfig("Rune", "Rune");
+                Configuration config2 = rune.GetConfig("Hest", "Rune");
+                config.SetValue("hej med dig2");
+                config2.SetValue("2");
             }
 
             Console.WriteLine("hej");

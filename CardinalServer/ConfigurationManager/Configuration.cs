@@ -11,6 +11,7 @@ namespace ConfigurationManager
         public string Name {get; set;}
         string value_;
 
+        public string Group { get; set; }
 
         public void SetValue(string Value)
         {
