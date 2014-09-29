@@ -72,5 +72,15 @@ namespace CardinalTypes.Types
             first.Value = first.value_ - second;
             return new CardinalInt(first.value_ - second);
         }
+
+        public byte[] ToByte()
+        {
+            return null; 
+        }
+
+        public void FromByte(byte[] data)
+        {
+
+        }
     }
 }

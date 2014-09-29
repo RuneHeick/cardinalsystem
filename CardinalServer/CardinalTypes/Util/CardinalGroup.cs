@@ -22,5 +22,15 @@ namespace CardinalTypes.CardinalGroud
 
         public override string Serilizer { get; set; }
 
+        public byte[] ToByte()
+        {
+            return null;
+        }
+
+        public void FromByte(byte[] data)
+        {
+
+        }
+
     }
 }
