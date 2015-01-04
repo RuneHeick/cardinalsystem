@@ -13,7 +13,7 @@ namespace Server
 {
     public class Server
     {
-        private ServerCom InterCom = new ServerCom();
+        private ServerCom InterCom;
 
         private HashSet<IPAddress> AllowedConnections = new HashSet<IPAddress>();
         private List<ConnectedClient> Clients = new List<ConnectedClient>(); 
@@ -34,7 +34,7 @@ namespace Server
             TcpListenSocket = new TcpListener(Me);
             TcpListenSocket.Start();
             TcpListenSocket.BeginAcceptTcpClient(ClientJoind, TcpListenSocket);
-            InterCom.Start(Me);
+            InterCom = new ServerCom(Me);
 
             UDPRequest.BeginReceive(UDP_RequestRecived, UDPRequest);
 

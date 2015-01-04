@@ -17,11 +17,15 @@ namespace Server.InterCom
         private ushort NetState = 0;
 
         private IPEndPoint Me;
-        private Task SendIamTask; 
+        private Task SendIamTask;
 
-        public ServerCom()
+        public ServerCom(IPEndPoint Address)
         {
+            
             Multicast.OnMulticastRecived += Multicast_OnMulticastRecived;
+            Me = Address;
+            AddOrUpdateAddress(Me.Address.ToString(), Me.Port, NetState);
+            SendWho();
             
         }
         
@@ -78,13 +82,6 @@ namespace Server.InterCom
                 await Task.Delay(500); 
                 Multicast.Send(infoCollector.Command);
             }
-        }
-
-        public void Start(IPEndPoint Address)
-        {
-            Me = Address;
-            AddOrUpdateAddress(Me.Address.ToString(), Me.Port, NetState);
-            SendWho();
         }
 
         private ushort CalcNetState()
