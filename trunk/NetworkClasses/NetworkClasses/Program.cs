@@ -12,17 +12,19 @@ namespace NetworkClasses
 {
     class Program
     {
+
+        static ServerCom test = new ServerCom();
+
         static void Main(string[] args)
         {
 
-
-            
-            ServerCom test3 = new ServerCom();
-            test3.Start(new System.Net.IPEndPoint(IPAddress.Loopback, 5050)); 
+            Server.Server t = new Server.Server(5050); 
+           
+            //test.Start(new System.Net.IPEndPoint(IPAddress.Parse("192.2.2.2"), 5050));
 
             //MulticastManager manager3 = new MulticastManager();
             //manager3.Send(new byte[3]);
-            Thread.Sleep(100000); 
+            Thread.Sleep(5000); 
             
         }
 
