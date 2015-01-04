@@ -18,8 +18,6 @@ namespace Server.InterCom
 
         private IPEndPoint Me;
 
-        private Timer IAmTimer = null; 
-
 
         public ServerCom()
         {
@@ -35,7 +33,11 @@ namespace Server.InterCom
              {
                  IAmCom com = new IAmCom();
                  com.Command = data;
-                 AddOrUpdateAddress(com.IP, com.Port, com.NetState); 
+                 AddOrUpdateAddress(com.IP, com.Port, com.NetState);
+
+                 if (NetState != com.NetState)
+                     SendWho(); 
+
              }
              else if(data[0] == (byte)InterComCommands.Who)
              {
@@ -46,19 +48,24 @@ namespace Server.InterCom
              }
         }
 
+        private void SendWho()
+        {
+            WhoCom infoCollector = new WhoCom()
+            {
+                IP = Me.Address.ToString(),
+                Port = Me.Port,
+                NetState = NetState
+            };
+
+            Multicast.Send(infoCollector.Command); 
+        }
+
 
         public void Start(IPEndPoint Address)
         {
             Me = Address;
             AddOrUpdateAddress(Me.Address.ToString(), Me.Port, NetState);
-            WhoCom infoCollector = new WhoCom()
-            {
-                IP = Address.Address.ToString(),
-                Port = Address.Port,
-                NetState = NetState
-            };
-
-            Multicast.Send(infoCollector.Command); 
+            SendWho();
         }
 
         private ushort CalcNetState()
@@ -80,39 +87,18 @@ namespace Server.InterCom
 
         private void SendIAm()
         {
-            if(IAmTimer == null)
-            {
-                IAmCom me = new IAmCom()
-                {
-                    IP = Me.Address.ToString(),
-                    Port = Me.Port
-                };
+           IAmCom me = new IAmCom()
+           {
+             IP = Me.Address.ToString(),
+             Port = Me.Port,
+             NetState = NetState
+           };
 
-                IAmTimer = new Timer(Tick_DoSend,me, 2000,2000); 
-            }
+           Multicast.Send(me.Command); 
+               
         }
 
-        private void Tick_DoSend(object state)
-        {
-            IAmCom me = (IAmCom)state;
-            lock(NetStateLock)
-            {
-                me.NetState = NetState;
-            }
-            Multicast.Send(me.Command);
-            lock (Addresses)
-            {
-                if (Addresses.Values.All((o) => o.NetView == NetState))
-                {
-                    if (IAmTimer != null)
-                    {
-                        IAmTimer.Dispose();
-                        IAmTimer = null;
-                    }
-                    Console.WriteLine("Ens");
-                }
-            }
-        }
+       
 
         private void AddOrUpdateAddress(string Ip, int port, ushort netState)
         {

@@ -16,9 +16,7 @@ namespace NetworkClasses
         {
 
 
-            ServerCom test = new ServerCom();
-            test.Start(new System.Net.IPEndPoint(IPAddress.Any, 5050));
-            Thread.Sleep(10000); 
+            
             ServerCom test3 = new ServerCom();
             test3.Start(new System.Net.IPEndPoint(IPAddress.Loopback, 5050)); 
 

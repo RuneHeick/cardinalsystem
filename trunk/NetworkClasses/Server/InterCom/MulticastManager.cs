@@ -17,7 +17,7 @@ namespace Server
         {
             MulticastClient = new UdpClient();
             MulticastClient.JoinMulticastGroup(MulticastAddress.Address);
-            MulticastClient.MulticastLoopback = true;
+            MulticastClient.MulticastLoopback = false;
             IPEndPoint localEp = new IPEndPoint(IPAddress.Any, MulticastAddress.Port);
             MulticastClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             MulticastClient.Client.Bind(localEp);
