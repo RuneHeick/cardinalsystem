@@ -17,15 +17,13 @@ namespace Server.InterCom
         private ushort NetState = 0;
 
         private IPEndPoint Me;
-
+        private Task SendIamTask; 
 
         public ServerCom()
         {
             Multicast.OnMulticastRecived += Multicast_OnMulticastRecived;
             
-            
         }
-
 
         void Multicast_OnMulticastRecived(byte[] data, IPEndPoint From)
         {
@@ -44,11 +42,11 @@ namespace Server.InterCom
                  WhoCom com = new WhoCom();
                  com.Command = data;
                  AddOrUpdateAddress(com.IP, com.Port, com.NetState);
-                 SendIAm(); 
+                 SendIAm();
              }
         }
 
-        private void SendWho()
+        private async void SendWho()
         {
             WhoCom infoCollector = new WhoCom()
             {
@@ -57,9 +55,12 @@ namespace Server.InterCom
                 NetState = NetState
             };
 
-            Multicast.Send(infoCollector.Command); 
+            for (int i = 0; i < 3; i++)
+            {
+                await Task.Delay(500); 
+                Multicast.Send(infoCollector.Command);
+            }
         }
-
 
         public void Start(IPEndPoint Address)
         {
@@ -87,18 +88,33 @@ namespace Server.InterCom
 
         private void SendIAm()
         {
-           IAmCom me = new IAmCom()
-           {
-             IP = Me.Address.ToString(),
-             Port = Me.Port,
-             NetState = NetState
-           };
-
-           Multicast.Send(me.Command); 
-               
+            if (SendIamTask == null || SendIamTask.Status != TaskStatus.Running)
+                SendIamTask = Task.Factory.StartNew(InfoTask); 
         }
 
-       
+        public async void InfoTask()
+        {
+            bool running = true;
+            while (running)
+            {
+                IAmCom me = new IAmCom()
+                {
+                    IP = Me.Address.ToString(),
+                    Port = Me.Port,
+                    NetState = NetState
+                };
+
+                Multicast.Send(me.Command); 
+
+                lock (Addresses)
+                {
+                    if (!Addresses.Values.All((o) => o.NetView == NetState))
+                        break;
+                }
+
+                await Task.Delay(2000);
+            }
+        }
 
         private void AddOrUpdateAddress(string Ip, int port, ushort netState)
         {
