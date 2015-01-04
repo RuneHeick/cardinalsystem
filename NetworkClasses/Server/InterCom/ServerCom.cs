@@ -24,7 +24,7 @@ namespace Server.InterCom
             Multicast.OnMulticastRecived += Multicast_OnMulticastRecived;
             
         }
-
+        
         void Multicast_OnMulticastRecived(byte[] data, IPEndPoint From)
         {
              if(data[0] == (byte)InterComCommands.IAm)
@@ -44,6 +44,20 @@ namespace Server.InterCom
                  AddOrUpdateAddress(com.IP, com.Port, com.NetState);
                  SendIAm();
              }
+             else if(data[0] == (byte)InterComCommands.Offline)
+             {
+                 OfflineCom off = new OfflineCom() { Command = data };
+                 RemoveFromAddresses(off.IP); 
+             }
+        }
+
+        private void RemoveFromAddresses(string ip)
+        {
+            lock(Addresses)
+            {
+                if (Addresses.ContainsKey(ip))
+                    Addresses.Remove(ip); 
+            }
         }
 
         private async void SendWho()
@@ -172,5 +186,19 @@ namespace Server.InterCom
             public ushort NetView { get; set; }
         }
 
+
+        ~ServerCom()
+        {
+            OfflineCom infoCollector = new OfflineCom()
+            {
+                IP = Me.Address.ToString(),
+            };
+
+            for (int i = 0; i < 3; i++)
+            {
+                Thread.Sleep(500);
+                Multicast.Send(infoCollector.Command);
+            }
+        }
     }
 }

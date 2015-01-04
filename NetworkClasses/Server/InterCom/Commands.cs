@@ -12,6 +12,7 @@ namespace Server.InterCom
     {
         Who = 0, // Asks who is on the network 
         IAm = 1, // Gives personal stats
+        Offline = 2, // Going Ofline
     }
 
 
@@ -75,6 +76,35 @@ namespace Server.InterCom
         }
         
 
+    }
+
+    public class OfflineCom
+    {
+        public string IP { get; set; }
+
+        public virtual InterComCommands ID
+        {
+            get
+            {
+                return InterComCommands.Offline;
+            }
+        }
+
+        public virtual byte[] Command
+        {
+            get
+            {
+                byte[] ip = IPAddress.Parse(IP).GetAddressBytes();
+                byte[] data = new byte[ip.Length + 1];
+                Array.Copy(ip, 0, data, 1, ip.Length);
+                data[0] = (byte)ID;
+                return data;
+            }
+            set
+            {
+                IP = value[1].ToString() + "." + value[2].ToString() + "." + value[3].ToString() + "." + value[4].ToString();
+            }
+        }
     }
 
 
