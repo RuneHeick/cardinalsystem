@@ -41,6 +41,7 @@ namespace Server
                 {
                     multicastError(); 
                 }
+                MulticastClient.BeginReceive(MulticastRecived, MulticastClient); 
             }
             catch
             {
