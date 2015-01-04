@@ -13,8 +13,6 @@ namespace NetworkClasses
     class Program
     {
 
-        static ServerCom test = new ServerCom();
-
         static void Main(string[] args)
         {
 
