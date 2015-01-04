@@ -123,6 +123,7 @@ namespace Server.InterCom
                 lock (Addresses)
                 {
                     Addresses.Add(Ip, info);
+                    Console.WriteLine("Adding " + Ip);
                 }
                 UpdateNetState();
             }
