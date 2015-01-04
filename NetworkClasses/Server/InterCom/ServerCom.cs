@@ -106,7 +106,7 @@ namespace Server.InterCom
                 SendIamTask = Task.Factory.StartNew(InfoTask); 
         }
 
-        public async void InfoTask()
+        private async void InfoTask()
         {
             bool running = true;
             while (running)
@@ -185,7 +185,6 @@ namespace Server.InterCom
 
             public ushort NetView { get; set; }
         }
-
 
         ~ServerCom()
         {
