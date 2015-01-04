@@ -53,10 +53,14 @@ namespace Server.InterCom
 
         private void RemoveFromAddresses(string ip)
         {
-            lock(Addresses)
+
+            if (Addresses.ContainsKey(ip))
             {
-                if (Addresses.ContainsKey(ip))
-                    Addresses.Remove(ip); 
+                lock (Addresses)
+                {
+                    Addresses.Remove(ip);
+                }
+                Console.WriteLine("Offline "+ip);
             }
         }
 
@@ -178,6 +182,8 @@ namespace Server.InterCom
             }
             return hashedValue;
         }
+
+        
 
         private class AddressInfo
         {
