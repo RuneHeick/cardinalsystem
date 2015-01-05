@@ -24,7 +24,6 @@ namespace Server.InterCom
 
         private TcpListener AcceptSocketInternal; 
 
-
         public ServerCom(IPEndPoint Address)
         {
             Me = Address;
@@ -91,7 +90,7 @@ namespace Server.InterCom
             if (Addresses.ContainsKey(ip))
             {
                 var info = Addresses[ip];
-                InternalClient client = ConnectedServers.FirstOrDefault((o) => o.IP == Address);
+                InternalClient client = ConnectedServers.FirstOrDefault((o) => o.IP.Equals(Address));
                 if (client == null)
                 {
                     TcpClient tcpclient = new TcpClient();
@@ -108,7 +107,6 @@ namespace Server.InterCom
         {
             public ConnectionRQ(TcpClient tcpclient1, byte[] Data, string ip)
             {
-                // TODO: Complete member initialization
                 this.tcpclient = tcpclient1;
                 this.Data = Data;
                 this.ip = ip;
@@ -118,7 +116,6 @@ namespace Server.InterCom
 
             public byte[] Data { get; set; }
         }
-
 
         private void Connection_Done(IAsyncResult ar)
         {
@@ -168,14 +165,13 @@ namespace Server.InterCom
 
         private void RemoveFromAddresses(string ip)
         {
-
-            if (Addresses.ContainsKey(ip))
+            lock (Addresses)
             {
-                lock (Addresses)
+                if (Addresses.ContainsKey(ip))
                 {
                     Addresses.Remove(ip);
+                    Console.WriteLine("Offline " + ip);
                 }
-                Console.WriteLine("Offline "+ip);
             }
         }
 
