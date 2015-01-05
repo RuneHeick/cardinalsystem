@@ -89,6 +89,7 @@ namespace Server.InterCom
             string ip = Address.ToString();
             if (Addresses.ContainsKey(ip))
             {
+
                 var info = Addresses[ip];
                 InternalClient client = ConnectedServers.FirstOrDefault((o) => o.IP.Equals(Address));
                 if (client == null)

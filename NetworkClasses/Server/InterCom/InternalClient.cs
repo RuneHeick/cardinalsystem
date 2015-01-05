@@ -26,10 +26,8 @@ namespace Server.InterCom
             this.client = client;
             IP = (client.Client.RemoteEndPoint as IPEndPoint).Address; 
             client.Client.BeginReceive(sizebuffer, 0, sizebuffer.Length, 0, DataReceivedSize, client.Client);
-            timeoutHandler = TimeOut.Create<InternalClient>(30000, this, CloseInactive);
+            timeoutHandler = TimeOut.Create<InternalClient>(5000, this, CloseInactive);
         }
-
-        
 
         protected void DataReceivedSize(IAsyncResult result)
         {
