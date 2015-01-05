@@ -23,11 +23,13 @@ namespace NetworkClasses
 
             //MulticastManager manager3 = new MulticastManager();
             //manager3.Send(new byte[3]);
-            Thread.Sleep(5000);
 
-            //t.Test();
-            Thread.Sleep(5000);
-            t.Test();
+            while(true)
+            {
+                Console.ReadLine();
+                t.Test();
+            }
+            
 
             Thread.Sleep(Timeout.Infinite);
         }

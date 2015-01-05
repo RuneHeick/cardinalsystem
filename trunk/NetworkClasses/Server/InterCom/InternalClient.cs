@@ -28,6 +28,7 @@ namespace Server.InterCom
                 {
                     if(item.LastUsed+new TimeSpan(0,0,30) < DateTime.Now)
                     {
+                        Console.WriteLine("Inactive " + item.IP.ToString());
                         item.Disconnected(); 
                         Connections.RemoveAt(i);
                         i--; 
@@ -46,19 +47,14 @@ namespace Server.InterCom
 
 
         TcpClient client;
-        DateTime LastUsed = DateTime.Now; 
+        DateTime LastUsed = DateTime.Now;
 
-        public IPAddress IP
-        {
-            get
-            {
-                return (client.Client.RemoteEndPoint as IPEndPoint).Address;
-            }
-        }
+        public IPAddress IP { get; private set; }
 
         public InternalClient(TcpClient client)
         {
             this.client = client;
+            IP = (client.Client.RemoteEndPoint as IPEndPoint).Address; 
             client.Client.BeginReceive(sizebuffer, 0, sizebuffer.Length, 0, DataReceivedSize, client.Client);
             
             if (Connections.Count == 0)
