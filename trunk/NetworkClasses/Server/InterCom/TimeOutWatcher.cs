@@ -74,7 +74,8 @@ namespace Server.InterCom
                              {
                                  lock (item.Lock)
                                  {
-                                     item.TimeoutAction();
+                                     if (item.TimeoutAction != null)
+                                        item.TimeoutAction();
                                      item.TimeoutAction = null;
                                  }
                              }));
