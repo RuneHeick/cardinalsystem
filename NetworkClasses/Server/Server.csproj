@@ -42,6 +42,7 @@
     <Compile Include="Client\ConnectedClient.cs" />
     <Compile Include="Client\ConnectionRequest.cs" />
     <Compile Include="Client\IClient.cs" />
+    <Compile Include="InterCom\IInternalClient.cs" />
     <Compile Include="InterCom\InternalClient.cs" />
     <Compile Include="Crc.cs" />
     <Compile Include="INetCom.cs" />

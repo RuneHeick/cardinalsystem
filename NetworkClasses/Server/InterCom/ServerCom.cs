@@ -15,7 +15,7 @@ namespace Server.InterCom
         private MulticastManager Multicast = new MulticastManager();
         private Dictionary<string, AddressInfo> Addresses = new Dictionary<string, AddressInfo>();
 
-        private HashSet<InternalClient> ConnectedServers = new HashSet<InternalClient>();
+        private HashSet<IInternalClient> ConnectedServers = new HashSet<IInternalClient>();
         private readonly object NetStateLock = new object(); 
         private ushort NetState = 0;
 
@@ -69,7 +69,7 @@ namespace Server.InterCom
 
         }
 
-        private void remoteServer_Disconnected(InternalClient obj)
+        private void remoteServer_Disconnected(IInternalClient obj)
         {
             obj.OnDataRecived -= remoteServer_OnDataRecived;
             obj.OnDisconnect -= remoteServer_Disconnected;
@@ -79,43 +79,70 @@ namespace Server.InterCom
             }
         }
 
-        void remoteServer_OnDataRecived(InternalNetworkCommands arg1, byte[] arg2, InternalClient arg3)
+        void remoteServer_OnDataRecived(InternalNetworkCommands arg1, byte[] arg2, IInternalClient arg3)
         {
             Console.WriteLine(BitConverter.ToString(arg2));
         }
 
         public void Send(IPAddress Address, byte[] Data)
         {
-            string ip = Address.ToString();
-            if (Addresses.ContainsKey(ip))
+            try
             {
+                string ip = Address.ToString();
 
-                var info = Addresses[ip];
-                InternalClient client = ConnectedServers.FirstOrDefault((o) => o.IP.Equals(Address));
-                if (client == null)
+                if (Addresses.ContainsKey(ip))
                 {
-                    TcpClient tcpclient = new TcpClient();
-                    tcpclient.BeginConnect(info.Address.Address, info.Address.Port, Connection_Done, new ConnectionRQ(tcpclient, Data, ip));
-                }
-                else
-                {
-                    client.Send(InternalNetworkCommands.Data, Data);
+                    lock (ConnectedServers)
+                    {
+                        IInternalClient client = ConnectedServers.FirstOrDefault((o) => o.IP.Equals(Address));
+                        if (client == null)
+                        {
+                            var info = Addresses[ip];
+                            TcpClient tcpclient = new TcpClient();
+                            var item = new ConnectionRQ(tcpclient, Data, info.Address.Address);
+                            tcpclient.BeginConnect(info.Address.Address, info.Address.Port, Connection_Done, item);
+                            ConnectedServers.Add(item);
+                        }
+                        else
+                        {
+                            client.Send(InternalNetworkCommands.Data, Data);
+                        }
+                    }
                 }
             }
+            catch
+            { }
         }
 
-        private class ConnectionRQ
+        private class ConnectionRQ : IInternalClient
         {
-            public ConnectionRQ(TcpClient tcpclient1, byte[] Data, string ip)
+            public ConnectionRQ(TcpClient tcpclient1, byte[] Data, IPAddress ip)
             {
                 this.tcpclient = tcpclient1;
-                this.Data = Data;
-                this.ip = ip;
+                this.Data = new List<byte[]>(1); 
+                this.Data.Add(Data);
+                this.IP = ip;
             }
             public TcpClient tcpclient { get; set; }
-            public string ip { get; set; }
+            public IPAddress IP { get; private set; }
 
-            public byte[] Data { get; set; }
+            public List<byte[]> Data { get; set; }
+
+            public void Send(InternalNetworkCommands commands, byte[] data)
+            {
+                Data.Add(data); 
+            }
+
+            public void FireOnDisconnect()
+            {
+                Action<IInternalClient> myEvent = OnDisconnect;
+                            if (myEvent != null)
+                                myEvent(this);
+            }
+
+            public event Action<IInternalClient> OnDisconnect;
+
+            public event Action<InternalNetworkCommands, byte[], IInternalClient> OnDataRecived;
         }
 
         private void Connection_Done(IAsyncResult ar)
@@ -129,13 +156,21 @@ namespace Server.InterCom
                 remoteServer.OnDisconnect += remoteServer_Disconnected;
                 lock (ConnectedServers)
                 {
+                    ConnectedServers.Remove(clinet);
                     ConnectedServers.Add(remoteServer);
                 }
-                remoteServer.Send(InternalNetworkCommands.Data, clinet.Data); 
+                for (int i = 0; i < clinet.Data.Count; i++ )
+                {
+                    remoteServer.Send(InternalNetworkCommands.Data, clinet.Data[i]); 
+                }
             }
             catch
             {
-                RemoveFromAddresses(clinet.ip); 
+                lock (ConnectedServers)
+                {
+                    ConnectedServers.Remove(clinet);
+                }
+                RemoveFromAddresses(clinet.IP.ToString()); 
             }
         }
         void Multicast_OnMulticastRecived(byte[] data, IPEndPoint From)
