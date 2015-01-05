@@ -48,7 +48,10 @@
     <Compile Include="InterCom\Commands.cs" />
     <Compile Include="InterCom\InternalNetworkCommands.cs" />
     <Compile Include="InterCom\MulticastManager.cs" />
+    <Compile Include="InterCom\OrderedList.cs" />
     <Compile Include="InterCom\ServerCom.cs" />
+    <Compile Include="InterCom\TimeOutWatcher.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Server.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

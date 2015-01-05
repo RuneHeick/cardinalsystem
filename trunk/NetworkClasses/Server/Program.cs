@@ -15,14 +15,7 @@ namespace NetworkClasses
 
         static void Main(string[] args)
         {
-            /*
-            var item = TimeOut.Create<int>(10000, 2, Done);
-            TimeOut.Create<int>(10000, 1, Done);
-            
-            TimeOut.Create<int>(30000, 3, Done);
-            Thread.Sleep(2000);
-            item.Touch();
-             */
+
             Server.Server t = new Server.Server(5050); 
            
            
@@ -39,11 +32,6 @@ namespace NetworkClasses
             
 
             Thread.Sleep(Timeout.Infinite);
-        }
-
-        private static void Done(int obj)
-        {
-            Console.WriteLine("Done "+obj.ToString()); 
         }
 
         static void manager_OnMulticastRecived(byte[] arg1, System.Net.IPEndPoint arg2)
