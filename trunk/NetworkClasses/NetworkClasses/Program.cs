@@ -18,11 +18,12 @@ namespace NetworkClasses
 
             Server.Server t = new Server.Server(5050); 
            
+           
             //test.Start(new System.Net.IPEndPoint(IPAddress.Parse("192.2.2.2"), 5050));
 
             //MulticastManager manager3 = new MulticastManager();
             //manager3.Send(new byte[3]);
-            Thread.Sleep(5000); 
+            Thread.Sleep(15000); 
             
         }
 

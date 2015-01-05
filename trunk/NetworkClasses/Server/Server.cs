@@ -7,7 +7,8 @@ using System.IO;
 using System.Net.NetworkInformation;
 using Server.InterCom;
 using System.Net;
-using System.Net.Sockets; 
+using System.Net.Sockets;
+using Server.Client; 
 
 namespace Server
 {
@@ -15,12 +16,11 @@ namespace Server
     {
         private ServerCom InterCom;
 
-        private HashSet<IPAddress> AllowedConnections = new HashSet<IPAddress>();
-        private List<ConnectedClient> Clients = new List<ConnectedClient>(); 
+        private Dictionary<IPAddress, IClient> Clients = new Dictionary<IPAddress, IClient>(); 
 
         private UdpClient UDPRequest; 
         private TcpListener TcpListenSocket;
-        private IPEndPoint Me; 
+        private IPEndPoint Me;
 
         public Server(int Port)
         {
@@ -39,6 +39,14 @@ namespace Server
             UDPRequest.BeginReceive(UDP_RequestRecived, UDPRequest);
 
         }
+
+        public void Test()
+        {
+
+            InterCom.Send(IPAddress.Parse("192.168.87.101"), new byte[] { 0, 1, 2, 3, 4, 5 }); 
+
+        }
+
 
         private void UDP_RequestRecived(IAsyncResult ar)
         {
@@ -68,10 +76,7 @@ namespace Server
                 var ip = client.Client.RemoteEndPoint as IPEndPoint;
                 if (ip != null)
                 {
-                    if (AllowedConnections.Contains(ip.Address))
-                    {
-                        return; // create new User 
-                    }
+                   
                 }
                 client.Close();
             }
