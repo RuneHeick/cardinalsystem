@@ -17,6 +17,7 @@ namespace Server.InterCom
         int readindex = 0;
 
         TcpClient client;
+        TimeOut timeoutHandler; 
 
         public IPAddress IP { get; private set; }
 
@@ -25,12 +26,14 @@ namespace Server.InterCom
             this.client = client;
             IP = (client.Client.RemoteEndPoint as IPEndPoint).Address; 
             client.Client.BeginReceive(sizebuffer, 0, sizebuffer.Length, 0, DataReceivedSize, client.Client);
-            
+            timeoutHandler = TimeOut.Create<InternalClient>(30000, this, CloseInactive);
         }
+
+        
 
         protected void DataReceivedSize(IAsyncResult result)
         {
-            
+            timeoutHandler.Touch();
             Socket stream = (Socket)result.AsyncState;
             SocketError Error;
             try
@@ -83,6 +86,7 @@ namespace Server.InterCom
 
         private void DataReceivedData(IAsyncResult result)
         {
+            timeoutHandler.Touch();
             Socket stream = (Socket)result.AsyncState;
             SocketError Error;
             try
@@ -122,6 +126,7 @@ namespace Server.InterCom
         {
             if (client.Connected == true)
             {
+                timeoutHandler.Touch();
                 if (data != null)
                 {
                     try
@@ -141,11 +146,17 @@ namespace Server.InterCom
             }
         }
 
+        public void Disconnect()
+        {
+            if (client.Client != null && client.Connected == true)
+            {
+                client.Close();
+                Disconnected();
+            }
+        }
+
         private void Disconnected()
         {
-            if (client.Connected)
-                client.Close(); 
-
             if (!isOnDisconnectCalled)
             {
                 lock (client)
@@ -159,6 +170,12 @@ namespace Server.InterCom
                     }
                 }
             }
+        }
+
+        private static void CloseInactive(InternalClient obj)
+        {
+            if (obj != null)
+                obj.Disconnect(); 
         }
 
         private bool isOnDisconnectCalled = false; 
