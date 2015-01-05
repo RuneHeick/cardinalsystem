@@ -26,6 +26,8 @@ namespace NetworkClasses
             Thread.Sleep(5000);
 
             //t.Test();
+            Thread.Sleep(5000);
+            t.Test();
 
             Thread.Sleep(Timeout.Infinite);
         }
