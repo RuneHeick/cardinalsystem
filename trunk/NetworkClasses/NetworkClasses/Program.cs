@@ -25,9 +25,9 @@ namespace NetworkClasses
             //manager3.Send(new byte[3]);
             Thread.Sleep(5000);
 
-            t.Test();
+            //t.Test();
 
-            Thread.Sleep(15000);
+            Thread.Sleep(Timeout.Infinite);
         }
 
         static void manager_OnMulticastRecived(byte[] arg1, System.Net.IPEndPoint arg2)

@@ -82,7 +82,7 @@ namespace Server.InterCom
 
         void remoteServer_OnDataRecived(InternalNetworkCommands arg1, byte[] arg2, InternalClient arg3)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(BitConverter.ToString(arg2));
         }
 
         public void Send(IPAddress Address, byte[] Data)
