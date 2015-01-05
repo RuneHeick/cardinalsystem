@@ -31,10 +31,13 @@ namespace NetworkClasses
             //MulticastManager manager3 = new MulticastManager();
             //manager3.Send(new byte[3]);
 
+            Random RAN = new Random(); 
             while(true)
             {
-                Console.ReadLine();
+                Thread.Sleep(100); 
                 t.Test();
+                if (RAN.Next(10) == 5)
+                    Thread.Sleep(7000);
             }
             
 

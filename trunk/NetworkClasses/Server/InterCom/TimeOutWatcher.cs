@@ -119,8 +119,6 @@ namespace Server.InterCom
 
         }
 
-
-
         #region Unit
 
         private long TimeoutEndTime;
