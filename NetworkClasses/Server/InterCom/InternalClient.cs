@@ -16,38 +16,7 @@ namespace Server.InterCom
         protected byte[] Databuffer;
         int readindex = 0;
 
-        static List<WeakReference> Connections = new List<WeakReference>();
-        static Timer TimeOutTimer = new Timer(Service_Connections, null, Timeout.Infinite, Timeout.Infinite);
-
-        private static void Service_Connections(object state)
-        {
-            for(int i = 0; i<Connections.Count; i++)
-            {
-                var item = Connections[i].Target as InternalClient;
-                if (item != null)
-                {
-                    if(item.LastUsed+new TimeSpan(0,0,30) < DateTime.Now)
-                    {
-                        Console.WriteLine("Inactive " + item.IP.ToString());
-                        item.Disconnected(); 
-                        Connections.RemoveAt(i);
-                        i--; 
-                    }
-                }
-                else
-                {
-                    Connections.RemoveAt(i);
-                    i--; 
-                }
-            }
-
-            if (Connections.Count == 0)
-                TimeOutTimer.Change(Timeout.Infinite, Timeout.Infinite);
-        }
-
-
         TcpClient client;
-        DateTime LastUsed = DateTime.Now;
 
         public IPAddress IP { get; private set; }
 
@@ -57,15 +26,11 @@ namespace Server.InterCom
             IP = (client.Client.RemoteEndPoint as IPEndPoint).Address; 
             client.Client.BeginReceive(sizebuffer, 0, sizebuffer.Length, 0, DataReceivedSize, client.Client);
             
-            if (Connections.Count == 0)
-                TimeOutTimer.Change(60000, 60000);
-
-            Connections.Add(new WeakReference(this)); 
         }
 
         protected void DataReceivedSize(IAsyncResult result)
         {
-            LastUsed = DateTime.Now; 
+            
             Socket stream = (Socket)result.AsyncState;
             SocketError Error;
             try
@@ -118,7 +83,6 @@ namespace Server.InterCom
 
         private void DataReceivedData(IAsyncResult result)
         {
-            LastUsed = DateTime.Now; 
             Socket stream = (Socket)result.AsyncState;
             SocketError Error;
             try
@@ -168,7 +132,6 @@ namespace Server.InterCom
                         Array.Copy(data, 0, Sendbuffer, startIndexer.Length, data.Length);
                         NetworkStream stream = client.GetStream();
                         stream.WriteAsync(Sendbuffer, 0, Sendbuffer.Length, new System.Threading.CancellationToken());
-                        LastUsed = DateTime.Now; 
                     }
                     catch
                     {
