@@ -114,7 +114,7 @@ namespace Server.InterCom
 
         #region Unit
 
-        public long TimeoutEndTime { get; private set; }
+        private long TimeoutEndTime;
         private long TimeoutReset;
         private readonly object Lock = new object();
 
@@ -134,8 +134,16 @@ namespace Server.InterCom
         }
 
 
-        #endregion
+        public void Calcel()
+        {
+            lock(list)
+            {
+                list.Remove(this);
+                TimeoutAction = null; 
+            }
+        }
 
+        #endregion
     }
 
 }
