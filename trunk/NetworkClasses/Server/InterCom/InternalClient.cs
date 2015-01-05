@@ -164,6 +164,7 @@ namespace Server.InterCom
                     if (!isOnDisconnectCalled)
                     {
                         isOnDisconnectCalled = true;
+                        timeoutHandler.Calcel();
                         Action<InternalClient> myEvent = OnDisconnect;
                         if (myEvent != null)
                             myEvent(this); 
@@ -175,7 +176,10 @@ namespace Server.InterCom
         private static void CloseInactive(InternalClient obj)
         {
             if (obj != null)
-                obj.Disconnect(); 
+            {
+                Console.WriteLine("Closing Inactive Socket");
+                obj.Disconnect();
+            }
         }
 
         private bool isOnDisconnectCalled = false; 
