@@ -39,10 +39,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ConnectedClient.cs" />
+    <Compile Include="Client\ConnectedClient.cs" />
+    <Compile Include="Client\ConnectionRequest.cs" />
+    <Compile Include="Client\IClient.cs" />
+    <Compile Include="InterCom\InternalClient.cs" />
     <Compile Include="Crc.cs" />
     <Compile Include="INetCom.cs" />
     <Compile Include="InterCom\Commands.cs" />
+    <Compile Include="InterCom\InternalNetworkCommands.cs" />
     <Compile Include="InterCom\MulticastManager.cs" />
     <Compile Include="InterCom\ServerCom.cs" />
     <Compile Include="Server.cs" />
