@@ -11,7 +11,7 @@ namespace Server.InterCom
     {
 
         void Send(InternalNetworkCommands commands, byte[] data);
-        public IPAddress IP { get;}
+        IPAddress IP { get;}
 
 
         event Action<IInternalClient> OnDisconnect;
