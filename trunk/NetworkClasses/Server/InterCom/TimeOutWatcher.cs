@@ -69,7 +69,15 @@ namespace Server.InterCom
                         {
                             list.Remove(item);
                             i--;
-                            Task.Factory.StartNew(item.TimeoutAction);
+                            if (item.TimeoutAction != null)
+                             Task.Factory.StartNew((() => 
+                             {
+                                 lock (item.Lock)
+                                 {
+                                     item.TimeoutAction();
+                                     item.TimeoutAction = null;
+                                 }
+                             }));
                         }
                         else
                         {
@@ -136,11 +144,13 @@ namespace Server.InterCom
 
         public void Calcel()
         {
-            lock(list)
+            lock (list)
             {
-                list.Remove(this);
-                TimeoutAction = null; 
+                if (list.Remove(this))
+                    CalibrateTick();
             }
+            lock(this.Lock)
+                TimeoutAction = null; 
         }
 
         #endregion
