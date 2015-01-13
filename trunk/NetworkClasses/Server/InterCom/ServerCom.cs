@@ -38,7 +38,7 @@ namespace Server.InterCom
 
             Addresses.IsSyncChanged += Addresses_IsSyncChanged;
 
-            SendWho();
+            Addresses_IsSyncChanged(false);
             
         }
 
@@ -195,6 +195,7 @@ namespace Server.InterCom
                 WhoCom com = new WhoCom();
                 com.Command = data;
                 Addresses.Update(new IPEndPoint(IPAddress.Parse(com.IP), com.Port), com.NetState);
+                SendIAm();
             }
             else if (data[0] == (byte)InterComCommands.Offline)
             {
@@ -207,26 +208,22 @@ namespace Server.InterCom
         {
             if (!obj)
             {
-                SendWho();
+                SendIAm();
                 if (SendIamTask == null || SendIamTask.Status != TaskStatus.Running)
                     SendIamTask = Task.Factory.StartNew(InfoTask);
             }
         }
 
-        private async void SendWho()
+        private void SendIAm()
         {
-            WhoCom infoCollector = new WhoCom()
+            IAmCom infoCollector = new IAmCom()
             {
                 IP = Me.Address.ToString(),
                 Port = Me.Port,
                 NetState = Addresses.NetState
             };
 
-            for (int i = 0; i < 3; i++)
-            {
-                await Task.Delay(500); 
-                Multicast.Send(infoCollector.Command);
-            }
+            Multicast.Send(infoCollector.Command);
         }
 
         private async void InfoTask()
@@ -234,7 +231,7 @@ namespace Server.InterCom
             bool running = true;
             while (running)
             {
-                IAmCom me = new IAmCom()
+                WhoCom me = new WhoCom()
                 {
                     IP = Me.Address.ToString(),
                     Port = Me.Port,
