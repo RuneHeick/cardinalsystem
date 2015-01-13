@@ -34,9 +34,9 @@ namespace NetworkClasses
             Random RAN = new Random(); 
             while(true)
             {
-                Thread.Sleep(100); 
+                Thread.Sleep(RAN.Next(100)); 
                 t.Test();
-                if (RAN.Next(10) == 5)
+                if (RAN.Next(100) == 5)
                     Thread.Sleep(7000);
             }
             
