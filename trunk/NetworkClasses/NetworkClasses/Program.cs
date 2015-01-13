@@ -32,13 +32,13 @@ namespace NetworkClasses
             //manager3.Send(new byte[3]);
 
             Random RAN = new Random(); 
-            while(true)
+            /*while(true)
             {
                 Thread.Sleep(RAN.Next(100)); 
                 t.Test();
                 if (RAN.Next(100) == 5)
                     Thread.Sleep(7000);
-            }
+            }*/
             
 
             Thread.Sleep(Timeout.Infinite);
