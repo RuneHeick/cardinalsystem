@@ -99,6 +99,7 @@ namespace Server.InterCom.IPMDir
                 }
                 NetState = CalcNetState();
                 UpdateIsSync();
+                Console.WriteLine(" added " + ip.ToString());
             }
         }
 
