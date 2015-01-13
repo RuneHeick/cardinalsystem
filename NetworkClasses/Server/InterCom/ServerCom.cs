@@ -38,7 +38,7 @@ namespace Server.InterCom
 
             Addresses.IsSyncChanged += Addresses_IsSyncChanged;
 
-            Addresses_IsSyncChanged(false);
+            SendWho();
             
         }
 
@@ -224,6 +224,21 @@ namespace Server.InterCom
             };
 
             Multicast.Send(infoCollector.Command);
+        }
+
+        private async void SendWho()
+        {
+            WhoCom infoCollector = new WhoCom()
+            {
+                IP = Me.Address.ToString(),
+                Port = Me.Port,
+                NetState = Addresses.NetState
+            };
+            for (int i = 0; i < 3; i++)
+            {
+                await Task.Delay(100); 
+                Multicast.Send(infoCollector.Command);
+            }
         }
 
         private async void InfoTask()
