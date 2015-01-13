@@ -211,7 +211,10 @@ namespace Server.InterCom
                 SendIAm();
                 if (SendIamTask == null || SendIamTask.Status != TaskStatus.Running)
                     SendIamTask = Task.Factory.StartNew(InfoTask);
+                Console.WriteLine("Not Sync");
             }
+            else
+                Console.WriteLine("Sync");
         }
 
         private void SendIAm()
@@ -232,11 +235,11 @@ namespace Server.InterCom
             {
                 IP = Me.Address.ToString(),
                 Port = Me.Port,
-                NetState = Addresses.NetState
             };
             for (int i = 0; i < 3; i++)
             {
-                await Task.Delay(100); 
+                await Task.Delay(100);
+                infoCollector.NetState = Addresses.NetState;
                 Multicast.Send(infoCollector.Command);
             }
         }
