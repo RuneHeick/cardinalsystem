@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 
 namespace Server.InterCom
 {
-
     public enum InternalNetworkCommands
     {
         Login = 0,
@@ -15,4 +14,6 @@ namespace Server.InterCom
         Signal = 4, 
         SignalResponse = 5
     }
+
+
 }

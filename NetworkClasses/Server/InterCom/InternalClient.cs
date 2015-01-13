@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Server.InterCom
 {
-    class InternalClient:IInternalClient
+    class InternalClient:IInternal
     {
         protected byte[] sizebuffer = new byte[1 + 4];
         protected byte[] Databuffer;
@@ -181,8 +181,8 @@ namespace Server.InterCom
         }
 
         private bool isOnDisconnectCalled = false; 
-        public event Action<IInternalClient> OnDisconnect;
-        public event Action<InternalNetworkCommands,byte[], IInternalClient> OnDataRecived;
+        public event Action<IInternal> OnDisconnect;
+        public event Action<InternalNetworkCommands,byte[], IInternal> OnDataRecived;
 
     }
 }

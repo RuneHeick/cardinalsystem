@@ -7,15 +7,15 @@ using System.Threading.Tasks;
 
 namespace Server.InterCom
 {
-    interface IInternalClient
+    interface IInternal
     {
 
         void Send(InternalNetworkCommands commands, byte[] data);
         IPAddress IP { get;}
 
 
-        event Action<IInternalClient> OnDisconnect;
-        event Action<InternalNetworkCommands, byte[], IInternalClient> OnDataRecived;
+        event Action<IInternal> OnDisconnect;
+        event Action<InternalNetworkCommands, byte[], IInternal> OnDataRecived;
 
     }
 }
