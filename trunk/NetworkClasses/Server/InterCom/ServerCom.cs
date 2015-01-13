@@ -37,9 +37,14 @@ namespace Server.InterCom
             Multicast.OnMulticastRecived += Multicast_OnMulticastRecived;
 
             Addresses.IsSyncChanged += Addresses_IsSyncChanged;
-
+            Addresses.MasterChanged += Addresses_MasterChanged;
             SendWho();
             
+        }
+
+        void Addresses_MasterChanged(IPEndPoint obj)
+        {
+            Console.WriteLine("Master is: " + obj.Address.ToString());
         }
 
         
