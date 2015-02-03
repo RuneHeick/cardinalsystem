@@ -210,19 +210,7 @@ namespace Server.InterCom.IPMDir
 
     }
 
-    class IPEqualityComparer : IEqualityComparer<IPAddress>
-    {
-        public bool Equals(IPAddress b1, IPAddress b2)
-        {
-            return b1.Equals(b2); 
-        }
-
-
-        public int GetHashCode(IPAddress bx)
-        {
-           return bx.GetHashCode();
-        }
-    }
+    
 
 
 

@@ -7,8 +7,9 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Server.InterCom;
 
-namespace Server.InterCom
+namespace Server.NewInterCom.Com
 {
     class InternalClient:IInternal
     {
@@ -46,7 +47,7 @@ namespace Server.InterCom
                     {
                         if (readindex == sizebuffer.Length)
                         {
-                            int size = sizebuffer[1] + (sizebuffer[2] << 8) + (sizebuffer[3] << 16) + (sizebuffer[4] << 24);
+                            int size = sizebuffer[1] + (sizebuffer[2] << 8);
                             Databuffer = new byte[size];
                             readindex = 0;
                             stream.BeginReceive(Databuffer, 0, Databuffer.Length, 0, DataReceivedData, stream);
@@ -79,7 +80,7 @@ namespace Server.InterCom
 
         private bool IsKnownMessage(byte Command)
         {
-            return Enum.IsDefined(typeof(InternalNetworkCommands), (int)Command); ;
+            return Enum.IsDefined(typeof(InternalNetworkCommands), (int)Command);
         }
 
         private void DataReceivedData(IAsyncResult result)
@@ -129,7 +130,7 @@ namespace Server.InterCom
                 {
                     try
                     {
-                        byte[] startIndexer = new byte[] { (byte)commands, (byte)data.Length, (byte)((data.Length >> 8)), (byte)((data.Length >> 16)), (byte)((data.Length >> 24)) };
+                        byte[] startIndexer = new byte[] { (byte)commands, (byte)data.Length, (byte)((data.Length >> 8)) };
                         byte[] Sendbuffer = new byte[startIndexer.Length + data.Length];
                         Array.Copy(startIndexer, 0, Sendbuffer, 0, startIndexer.Length);
                         Array.Copy(data, 0, Sendbuffer, startIndexer.Length, data.Length);
