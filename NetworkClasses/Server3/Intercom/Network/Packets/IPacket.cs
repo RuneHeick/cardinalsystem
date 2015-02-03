@@ -17,7 +17,9 @@ namespace Server3.Intercom.Network.Packets
 
         bool IsResponse { get; set; }
 
-        int Length { get; }
+        int PayloadLength { get; }
+
+        int PacketLength { get; }
 
         byte this[int i] { get; set; }
 
