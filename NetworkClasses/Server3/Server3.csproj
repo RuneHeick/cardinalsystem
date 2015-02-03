@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{65B7A5D2-8D8A-49C8-B32E-8A187161F499}</ProjectGuid>
+    <ProjectGuid>{63D12CDE-58C3-41F1-B9D6-86EA0A603278}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Server</RootNamespace>
-    <AssemblyName>Server</AssemblyName>
+    <RootNamespace>Server3</RootNamespace>
+    <AssemblyName>Server3</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -39,35 +39,26 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Client\ConnectedClient.cs" />
-    <Compile Include="Client\ConnectionRequest.cs" />
-    <Compile Include="Client\IClient.cs" />
-    <Compile Include="InterCom\IInternal.cs" />
-    <Compile Include="InterCom\InternalClient.cs" />
-    <Compile Include="InterCom\IPMDir\AddressInfo.cs" />
-    <Compile Include="InterCom\IPMDir\IPDictionary.cs" />
-    <Compile Include="InterCom\NetworkAggrements.cs" />
-    <Compile Include="NewInterCom\Com\ComLink.cs" />
-    <Compile Include="NewInterCom\Com\DataCollector.cs" />
-    <Compile Include="NewInterCom\Com\InternalClient.cs" />
-    <Compile Include="NewInterCom\Com\InternalNetworkCommands.cs" />
-    <Compile Include="NewInterCom\SeverSettings.cs" />
-    <Compile Include="Utility\IPEqualityComparer.cs" />
-    <Compile Include="NewInterCom\SharedSettingsManager.cs" />
-    <Compile Include="NewInterCom\SharedSettings\ISetting.cs" />
-    <Compile Include="NewInterCom\SharedSettings\SettingManager.cs" />
-    <Compile Include="NewInterCom\SharedSettings\StringToByteDir.cs" />
-    <Compile Include="Utility\Crc.cs" />
-    <Compile Include="INetCom.cs" />
-    <Compile Include="InterCom\Commands.cs" />
-    <Compile Include="InterCom\InternalNetworkCommands.cs" />
-    <Compile Include="InterCom\MulticastManager.cs" />
-    <Compile Include="Utility\OrderedList.cs" />
-    <Compile Include="InterCom\ServerCom.cs" />
-    <Compile Include="Utility\TimeOutWatcher.cs" />
-    <Compile Include="Program.cs" />
-    <Compile Include="Server.cs" />
+    <Compile Include="EventBus\EventBus.cs" />
+    <Compile Include="Intercom\Network\Packets\IPacket.cs" />
+    <Compile Include="Intercom\Network\Packets\NetworkPacket.cs" />
+    <Compile Include="Intercom\Network\Packets\NetworkFullPacket.cs" />
+    <Compile Include="Intercom\Network\NetworkRequest.cs" />
+    <Compile Include="Intercom\Network\NIC.cs" />
+    <Compile Include="Intercom\Network\NICHelpers\IConnector.cs" />
+    <Compile Include="Intercom\Network\NICHelpers\MulticastConnector.cs" />
+    <Compile Include="Intercom\Network\NICHelpers\TCPConnector.cs" />
+    <Compile Include="Intercom\Network\NICHelpers\UDPConnector.cs" />
+    <Compile Include="Intercom\Network\Packets\NetworkSegmentedPacket.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utility\Crc.cs" />
+    <Compile Include="Utility\IPEqualityComparer.cs" />
+    <Compile Include="Utility\MemberInfoGetting.cs" />
+    <Compile Include="Utility\OrderedList.cs" />
+    <Compile Include="Utility\TimeOutWatcher.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="EventBus\Messages\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
