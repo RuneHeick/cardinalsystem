@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Server.InterCom;
 using Server.Utility;
+using Server3.Intercom.Network.Packets;
 
 namespace Server3.Intercom.Network.NICHelpers
 {
@@ -17,6 +18,8 @@ namespace Server3.Intercom.Network.NICHelpers
 
         private readonly TcpListener _listener;
 
+        public IPEndPoint Address { get; private set; }
+
         public int OpenConnections
         {
             get { return _connectedClients.Count; }
@@ -24,6 +27,7 @@ namespace Server3.Intercom.Network.NICHelpers
 
         public TCPConnector(IPEndPoint ip)
         {
+            Address = ip; 
             _listener = new TcpListener(ip.Address,ip.Port);
             _listener.Start();
             _listener.BeginAcceptTcpClient(AsyncAcceptClientComplete, null);
@@ -54,22 +58,22 @@ namespace Server3.Intercom.Network.NICHelpers
             List<RequestInfo> rq; 
             lock (_requestBank)
             {
-                if (_requestBank.ContainsKey(request.Address.Address))
+                if (_requestBank.ContainsKey(request.Packet.Address.Address))
                 {
-                    rq = _requestBank[request.Address.Address];
+                    rq = _requestBank[request.Packet.Address.Address];
                     rq.Add(new RequestInfo(request));
                 }
                 else
                 {
                     rq = new List<RequestInfo>(1) {new RequestInfo(request)};
-                    _requestBank.Add(request.Address.Address, rq);
+                    _requestBank.Add(request.Packet.Address.Address, rq);
                 }
             }
 
             lock (_connectedClients)
             {
                 var connection = _connectedClients.FirstOrDefault(
-                    (o) => o.Address.Equals(request.Address.Address));
+                    (o) => o.Address.Equals(request.Packet.Address.Address));
                 if (connection == null)
                     StartConnect(request);
                 else if (connection.Client.Connected && connection.IsConnecting == false)
@@ -83,11 +87,11 @@ namespace Server3.Intercom.Network.NICHelpers
             lock (_connectedClients)
             {
                 var connection = _connectedClients.FirstOrDefault(
-                   (o) => o.Address.Equals(request.Address.Address));
+                   (o) => o.Address.Equals(request.Packet.Address.Address));
                 if (connection == null)
                 {
-                    ClientInfo info = AddClient(new TcpClient(), request.Address.Address, true); 
-                    info.Client.BeginConnect(request.Address.Address, request.Address.Port, AsyncConnectionComplete,info);
+                    ClientInfo info = AddClient(new TcpClient(), request.Packet.Address.Address, true);
+                    info.Client.BeginConnect(request.Packet.Address.Address, request.Packet.Address.Port, AsyncConnectionComplete, info);
                 }
             }
         }
@@ -163,7 +167,13 @@ namespace Server3.Intercom.Network.NICHelpers
 
                     StartRead(info); //Start Reading before using thread to handle Packet. 
 
-                    PacketRecived(info);
+                    NetworkPacket recivedPacket = new NetworkPacket(infoBuffer, packetBuffer)
+                    {
+                        TimeStamp = RecivedTime, 
+                        Address = info.Client.Client.RemoteEndPoint as IPEndPoint
+                    };
+
+                    PacketRecived(recivedPacket);
                 }
                 else
                 {
@@ -176,10 +186,43 @@ namespace Server3.Intercom.Network.NICHelpers
             }
         }
 
-        private void PacketRecived(ClientInfo info)
+        private void PacketRecived(NetworkPacket packet)
         {
-            //Packet is invalid when this is exited 
-            //throw new NotImplementedException();
+            try
+            {
+                if (packet.IsResponse)
+                {
+                    RequestInfo rq = null; 
+                    lock (_requestBank)
+                    {
+                        if (_requestBank.ContainsKey(packet.Address.Address))
+                        {
+                            var list = _requestBank[packet.Address.Address];
+                            rq = list.FirstOrDefault((o) => o.Request.Packet.Sesion == packet.Sesion);
+                            list.Remove(rq);
+                        }
+                    }
+                    if (rq != null)
+                    {
+                        rq.Request.ResponseCallback(packet);
+                    }
+                    else
+                    {
+                        //rougePacket
+                    }
+                }
+                else
+                {
+                    // For thread safty
+                    Action<NetworkPacket, IConnector> Event = OnPacketRecived;
+                    if (Event != null)
+                        Event(packet, this);
+                }
+            }
+            catch
+            {
+                // Packet handle error 
+            }
         }
 
         private void ClearRequestBank(IPAddress address)
@@ -204,7 +247,7 @@ namespace Server3.Intercom.Network.NICHelpers
                             .BeginWrite(packet, 0, packet.Length,
                                 AsyncWriteComplete, stream);
                         requestInfos[i].IsSend = true; 
-                        if (requestInfos[i].Id == 0)
+                        if (requestInfos[i].Request.Packet.Sesion == 0)
                         {
                             requestInfos.RemoveAt(i);
                             i--; 
@@ -258,7 +301,7 @@ namespace Server3.Intercom.Network.NICHelpers
             return info;
         }
 
-        //public event Action<byte, byte[], IPEndPoint, IConnector> OnPacketRecived;
+        public event Action<NetworkPacket, IConnector> OnPacketRecived;
 
 
         private class ClientInfo
@@ -308,17 +351,16 @@ namespace Server3.Intercom.Network.NICHelpers
             {
                 IsSend = false;
                 Request = request;
+                
                 if (Request.ResponseCallback != null)
                 {
                     lock (IdCountLock)
                     {
-                        Id = _idCount++;
-                        _idCount = (byte) (_idCount > 31 ? 1 : _idCount);
+                        Request.Packet.Sesion = _idCount++;
+                        _idCount = (byte) (_idCount > 127 ? 1 : _idCount);
                     }
                 }
             }
-
-            public byte Id { get; private set; }
 
             public NetworkRequest Request { get; set; }
 
@@ -326,3 +368,12 @@ namespace Server3.Intercom.Network.NICHelpers
         }
     }
 }
+
+
+/*
+
+ TimeOut på request 
+ Replay in Packet
+ 
+
+*/
