@@ -136,17 +136,7 @@ namespace Server3.Intercom.Network.NICHelpers
             }
         }
 
-        public void Send(NetworkPacket packet)
-        {
-            NetworkRequest item = new NetworkRequest()
-            {
-                Packet = packet
-            };
-            Send(item);
-        }
-
         public event Action<NetworkPacket, IConnector> OnPacketRecived;
-
         private class ReciverInfo
         {
             public IPEndPoint Address { get; set; }
