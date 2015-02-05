@@ -3,29 +3,67 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Runtime.CompilerServices;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
+using Server3.Intercom.Network.NICHelpers;
 
 namespace Server3.Intercom.Network.Packets
 {
     public class NetworkPacket
     {
 
-        IPacket _packet; 
+        IPacket _packet;
+        private IConnector _connector;
 
-        public NetworkPacket(byte[] fullPacket)
+        public NetworkPacket(byte[] fullPacket, IConnector connector, PacketType type)
         {
-            _packet = new NetworkFullPacket(fullPacket);
+            Type = type;
+            if (type == PacketType.Tcp)
+                _packet = new NetworkFullPacket(fullPacket);
+            else
+                _packet = new NetworkShortPacket(fullPacket);
+            _connector = connector;
         }
 
-        public NetworkPacket(int payloadLength)
+
+        public NetworkPacket(int payloadLength, PacketType type, bool isSignal = false)
         {
-            _packet = new NetworkFullPacket(payloadLength);
+            Type = type; 
+            if(type == PacketType.Tcp)
+                _packet = new NetworkFullPacket(payloadLength);
+            else
+            {
+                _packet = new NetworkShortPacket(payloadLength, isSignal);
+            }
         }
 
-        public NetworkPacket(byte[] info, byte[] payload)
+
+        public NetworkPacket(byte[] info, byte[] payload, IConnector connector, PacketType type)
         {
             _packet = new NetworkSegmentedPacket(info, payload);
+            _connector = connector;
+            Type = type; 
+        }
+
+        public void SendReply(NetworkPacket packet)
+        {
+                SendReply(new NetworkRequest() {Packet = packet});
+        }
+
+        public void SendReply(NetworkRequest rq)
+        {
+            if (_connector != null && IsResponse == false && Sesion != 0)
+            {
+                rq.Packet.Address = Address;
+                rq.Packet.Sesion = Sesion;
+                rq.Packet.IsResponse = true;
+                _connector.Send(rq);
+            }
+            else
+            {
+                throw new InvalidOperationException("Cannot Replay on a Response/Signal/Self Packet");
+            }
         }
 
         public static int GetPacketLength(byte[] packetPart)
@@ -99,5 +137,14 @@ namespace Server3.Intercom.Network.Packets
         public DateTime TimeStamp { get; set; }
 
         public IPEndPoint Address { get; set;  }
+
+        public PacketType Type { get; set; }
+    }
+
+    public enum PacketType
+    {
+        Tcp,
+        Udp, 
+        Multicast,
     }
 }

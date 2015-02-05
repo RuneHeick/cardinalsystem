@@ -10,6 +10,16 @@ namespace Server3.Intercom.Network
         public NetworkPacket Packet { get; set; }
 
         public Action<NetworkPacket> ResponseCallback { get; set; }
+
+        public Action<NetworkPacket, ErrorType> ErrorCallbak { get; set; }
         
+    }
+
+    public enum ErrorType
+    {
+        TimeOut,
+        Connection,
+        RequestFull,
+        PacketFormat
     }
 }

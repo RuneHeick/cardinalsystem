@@ -9,11 +9,11 @@ using Server3.Intercom.Network.Packets;
 namespace ServerTest
 {
     [TestClass]
-    public class TcpConnectorTest
+    public class UdpConnectorTest
     {
         public IPEndPoint _me;
-        public TCPConnector _connector;
-        public TCPConnector _connector2;
+        public UdpConnector _connector;
+        public UdpConnector _connector2;
 
         bool done = false; 
 
@@ -23,16 +23,16 @@ namespace ServerTest
         public void TestMethodSetup()
         {
             _me = new IPEndPoint(IPAddress.Loopback, 5050);
-            _connector2 = new TCPConnector(_me);
-            _connector = new TCPConnector(new IPEndPoint(IPAddress.Loopback, 5000));
+            _connector2 = new UdpConnector(_me);
+            _connector = new UdpConnector(new IPEndPoint(IPAddress.Loopback, 5000));
 
             _rq = CreateRQ();
         }
 
-        private NetworkRequest CreateRQ()
+        private NetworkRequest CreateRQ(bool isSignal = false)
         {
             var rq = new NetworkRequest();
-            rq.Packet = new NetworkPacket(3,PacketType.Tcp);
+            rq.Packet = new NetworkPacket(3, PacketType.Udp, isSignal);
             rq.Packet[0] = 1;
             rq.Packet[1] = 2;
             rq.Packet[2] = 3;
@@ -51,54 +51,42 @@ namespace ServerTest
             _connector = null;
         }
 
-        [TestMethod]
-        public void Connect()
-        {
-            _connector.Send(_rq);
-            Assert.AreEqual(_connector.OpenConnections, 1);
-        }
-
-        [TestMethod]
-        public void CloseInactiveConnection()
-        {
-            _connector.Send(_rq);
-            Assert.AreEqual(_connector.OpenConnections, 1); 
-            Thread.Sleep(40000);
-            Assert.AreEqual(_connector.OpenConnections, 0); 
-        }
-
-        [TestMethod]
-        public void ConnectToFail()
-        {
-            _rq.Packet.Address.Address = IPAddress.Parse("192.168.1.100");
-            _connector.Send(_rq); 
-            Thread.Sleep(40000);
-            Assert.AreEqual(_connector.OpenConnections, 0);
-        }
-
-        [TestMethod]
-        public void BundeldConnectionRq()
-        {
-            _connector.Send(_rq);
-            _connector.Send(_rq);
-            _connector.Send(_rq);
-            Assert.AreEqual(_connector.OpenConnections, 1); 
-        }
-
         
         [TestMethod]
         public void RecivePacketSignal()
         {
             _connector2.OnPacketRecived += (o, s) => PacketRecived(o);
-            _connector.Send(_rq);
+            _connector.Send(CreateRQ(true));
             DateTime start = DateTime.Now; 
             while(done == false)
             {
                 var time = DateTime.Now-start;
-                if (time.TotalSeconds > 4)
+                if (time.TotalSeconds > 5)
                     Assert.Fail("No message Recived");
             }
         }
+
+        private int _recived = 0;
+        private object Lock = new object(); 
+        [TestMethod]
+        public void RecivePacketSignalRuch()
+        {
+            int len = _rq.Packet.PacketLength;
+            _connector2.OnPacketRecived += (o, s) => {
+                                                         lock (Lock)
+                                                         {
+                                                             if(len == o.PacketLength)
+                                                             _recived++;
+                                                         } }; 
+            
+            for(int i = 0; i<100; i++)
+                _connector.Send(_rq);
+
+            Thread.Sleep(200);
+            lock (Lock)
+                Assert.IsTrue(100 == _recived);
+        }
+
 
         [TestMethod]
         public void RecivePacketRq()
@@ -110,19 +98,20 @@ namespace ServerTest
             while (done == false)
             {
                 var time = DateTime.Now - start;
-                if (time.TotalSeconds > 40)
+                if (time.TotalSeconds > 400)
                     Assert.Fail("No message Recived");
             }
         }
 
         void _connector2_OnPacketRecived(NetworkPacket arg1, IConnector arg2)
         {
-            arg1.SendReply(CreateRQ());
+            arg1.SendReply(CreateRQ().Packet);
         }
 
         private void PacketRecived(NetworkPacket obj)
         {
-            done = true;
+            if (obj[0] == 1 && obj[1] == 2 && obj[2] == 3)
+                done = true;
         }
 
         [TestMethod]
@@ -152,23 +141,6 @@ namespace ServerTest
             _connector.Send(_rq);
             Thread.Sleep(6000);
             Assert.IsFalse(done);
-        }
-
-        [TestMethod]
-        public void RequestTimeoutDisconnect()
-        {
-            _rq.ResponseCallback = (o) => { };
-            _rq.ErrorCallbak = (o, s) =>
-            { if(s==ErrorType.Connection) done = true; };
-            _connector.Send(_rq);
-            _connector.Stop();
-            DateTime start = DateTime.Now;
-            while (done == false)
-            {
-                var time = DateTime.Now - start;
-                if (time.TotalSeconds > 6)
-                    Assert.Fail("Timeout to slow");
-            }
         }
 
         [TestMethod]
@@ -215,30 +187,6 @@ namespace ServerTest
                 if (time.TotalSeconds > 4)
                     Assert.Fail("No message Recived");
             }
-        }
-
-        private int _recived = 0;
-        private object Lock = new object();
-        [TestMethod]
-        public void RecivePacketSignalRuch()
-        {
-            int len = _rq.Packet.PacketLength;
-            _connector2.OnPacketRecived += (o, s) =>
-            {
-                lock (Lock)
-                {
-                    if (len == o.PacketLength)
-                        _recived++;
-                    else
-                        Assert.Fail("Packet Error");
-                }
-            };
-
-            for (int i = 0; i < 100; i++)
-                _connector.Send(CreateRQ());
-            Thread.Sleep(200);
-            lock (Lock)
-                Assert.IsTrue(100 == _recived);
         }
 
     }
