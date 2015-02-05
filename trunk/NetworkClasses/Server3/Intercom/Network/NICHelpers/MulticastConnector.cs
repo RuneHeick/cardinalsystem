@@ -64,24 +64,12 @@ namespace Server3.Intercom.Network.NICHelpers
             }
         }
 
-
         public void Send(NetworkRequest request)
         {
             throw new NotImplementedException();
         }
 
-        public void Send(Packets.NetworkPacket packet)
-        {
-            try
-            {
-                _multicastClient.BeginSend(packet.Packet, packet.Packet.Length, _multicastAddress, SendComplete, _multicastClient);
-            }
-            catch
-            {
-                multicastError();
-            }
-        }
-
         public event Action<Packets.NetworkPacket, IConnector> OnPacketRecived;
+
     }
 }

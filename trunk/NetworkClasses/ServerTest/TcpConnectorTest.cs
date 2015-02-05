@@ -241,5 +241,53 @@ namespace ServerTest
                 Assert.IsTrue(100 == _recived);
         }
 
+
+        [TestMethod]
+        public void CommandSignal()
+        {
+            _connector2.OnPacketRecived += (o, s) => { if (o.Command == 5) done = true; };
+            _rq.Packet.Command = 5; 
+            _connector.Send(_rq);
+            DateTime start = DateTime.Now;
+            while (done == false)
+            {
+                var time = DateTime.Now - start;
+                if (time.TotalSeconds > 4)
+                    Assert.Fail("No message Recived");
+            }
+        }
+
+        [TestMethod]
+        public void CommandRq()
+        {
+            _connector2.OnPacketRecived += (o, s) => { if (o.Command == 5) done = true; }; ;
+            _rq.Packet.Command = 5; 
+            _rq.ResponseCallback = PacketRecived;
+            _connector.Send(_rq);
+            DateTime start = DateTime.Now;
+            while (done == false)
+            {
+                var time = DateTime.Now - start;
+                if (time.TotalSeconds > 40)
+                    Assert.Fail("No message Recived");
+            }
+        }
+
+        [TestMethod]
+        public void CommandToBig()
+        {
+            try
+            {
+                _rq.Packet.Command = 32;
+                Assert.Fail("To big Command");
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                
+            }
+            
+        }
+
+
     }
 }

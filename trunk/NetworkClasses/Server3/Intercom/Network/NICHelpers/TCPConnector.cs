@@ -80,15 +80,6 @@ namespace Server3.Intercom.Network.NICHelpers
             }
         }
 
-        public void Send(NetworkPacket packet)
-        {
-            var item = new NetworkRequest()
-            {
-                Packet = packet
-            };
-            Send(item);
-        }
-
         private void StartConnect(NetworkRequest request)
         {
             lock (_connectedClients)

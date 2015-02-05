@@ -7,8 +7,6 @@ namespace Server3.Intercom.Network.NICHelpers
     {
         void Send(NetworkRequest request);
 
-        void Send(NetworkPacket packet);
-
         event Action<NetworkPacket, IConnector> OnPacketRecived;
     }
 }
