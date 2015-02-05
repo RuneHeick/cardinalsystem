@@ -45,14 +45,16 @@
     <Compile Include="Intercom\Network\Packets\NetworkFullPacket.cs" />
     <Compile Include="Intercom\Network\NetworkRequest.cs" />
     <Compile Include="Intercom\Network\NIC.cs" />
-    <Compile Include="Intercom\Network\NICHelpers\IConnector.cs" />
+    <Compile Include="Intercom\Network\NICHelpers\Helpers\IConnector.cs" />
     <Compile Include="Intercom\Network\NICHelpers\MulticastConnector.cs" />
     <Compile Include="Intercom\Network\NICHelpers\TCPConnector.cs" />
     <Compile Include="Intercom\Network\NICHelpers\UDPConnector.cs" />
     <Compile Include="Intercom\Network\Packets\NetworkSegmentedPacket.cs" />
+    <Compile Include="Intercom\Network\Packets\NetworkShortPacket.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utility\Crc.cs" />
     <Compile Include="Utility\IPEqualityComparer.cs" />
+    <Compile Include="Utility\IPRange.cs" />
     <Compile Include="Utility\MemberInfoGetting.cs" />
     <Compile Include="Utility\OrderedList.cs" />
     <Compile Include="Utility\TimeOutWatcher.cs" />

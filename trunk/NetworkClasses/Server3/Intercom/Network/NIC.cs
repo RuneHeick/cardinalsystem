@@ -12,7 +12,7 @@ namespace Server3.Intercom.Network
 
         //Privates 
         private TCPConnector _tcpConnector { get; set; }
-        private UDPConnector _udpConnector { get; set; }
+        private UdpConnector _udpConnector { get; set; }
         private MulticastConnector _multicastConnector { get; set; }
 
 

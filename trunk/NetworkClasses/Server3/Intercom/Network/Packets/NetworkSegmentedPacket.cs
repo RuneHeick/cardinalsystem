@@ -53,7 +53,7 @@ namespace Server3.Intercom.Network.Packets
 
         public int PayloadLength
         {
-            get { return Packet.Length; }
+            get { return _packet.Length; }
         }
 
         public int PacketLength
