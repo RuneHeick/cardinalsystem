@@ -136,6 +136,11 @@ namespace Server3.Intercom.Network.NICHelpers
             }
         }
 
+        public PacketType Support
+        {
+            get { return PacketType.Udp; }
+        }
+
         public event Action<NetworkPacket, IConnector> OnPacketRecived;
         private class ReciverInfo
         {

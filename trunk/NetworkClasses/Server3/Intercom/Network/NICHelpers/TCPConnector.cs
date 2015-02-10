@@ -17,8 +17,7 @@ namespace Server3.Intercom.Network.NICHelpers
         private const int ConnectionMaxIdleTime_ms = 30000;
         private const int RequestTTL_ms = 5000;
 
-        readonly Dictionary<IPAddress, List<RequestInfo>> _requestBank = new Dictionary<IPAddress, List<RequestInfo>>(new IPEqualityComparer());
-        readonly List<ClientInfo> _connectedClients = new List<ClientInfo>();
+        private readonly List<ClientInfo> _connectedClients = new List<ClientInfo>();
 
         private readonly TcpListener _listener;
 
@@ -31,8 +30,8 @@ namespace Server3.Intercom.Network.NICHelpers
 
         public TCPConnector(IPEndPoint ip)
         {
-            Address = ip; 
-            _listener = new TcpListener(ip.Address,ip.Port);
+            Address = ip;
+            _listener = new TcpListener(ip.Address, ip.Port);
             _listener.Start();
             _listener.BeginAcceptTcpClient(AsyncAcceptClientComplete, null);
         }
@@ -55,7 +54,7 @@ namespace Server3.Intercom.Network.NICHelpers
             try
             {
                 var socket = _listener.EndAcceptTcpClient(ar);
-                var info = AddClient(socket, ((IPEndPoint) socket.Client.RemoteEndPoint).Address, false); 
+                var info = AddClient(socket, ((IPEndPoint) socket.Client.RemoteEndPoint).Address, false);
                 StartRead(info);
             }
             catch (Exception)
@@ -66,7 +65,7 @@ namespace Server3.Intercom.Network.NICHelpers
 
         public void Send(NetworkRequest request)
         {
-            List<RequestInfo> rq = AddRequestBank(request.Packet.Address.Address, request); 
+            List<RequestInfo> rq = AddRequestBank(request.Packet.Address.Address, request);
 
             lock (_connectedClients)
             {
@@ -76,7 +75,7 @@ namespace Server3.Intercom.Network.NICHelpers
                     StartConnect(request);
                 else if (connection.Client.Connected && connection.IsConnecting == false)
                     StartSendReqest(connection, rq);
-                
+
             }
         }
 
@@ -85,11 +84,12 @@ namespace Server3.Intercom.Network.NICHelpers
             lock (_connectedClients)
             {
                 var connection = _connectedClients.FirstOrDefault(
-                   (o) => o.Address.Equals(request.Packet.Address.Address));
+                    (o) => o.Address.Equals(request.Packet.Address.Address));
                 if (connection == null)
                 {
                     ClientInfo info = AddClient(new TcpClient(), request.Packet.Address.Address, true);
-                    info.Client.BeginConnect(request.Packet.Address.Address, request.Packet.Address.Port, AsyncConnectionComplete, info);
+                    info.Client.BeginConnect(request.Packet.Address.Address, request.Packet.Address.Port,
+                        AsyncConnectionComplete, info);
                 }
             }
         }
@@ -108,7 +108,7 @@ namespace Server3.Intercom.Network.NICHelpers
                 CloseClientInfo(info);
             }
 
-            
+
             lock (_requestBank)
             {
                 if (_requestBank.ContainsKey(info.Address))
@@ -122,7 +122,7 @@ namespace Server3.Intercom.Network.NICHelpers
         private void StartRead(ClientInfo info)
         {
             info.Client.GetStream()
-                    .BeginRead(info.InfoBuffer, 0, info.InfoBuffer.Length, AsyncInfoReadComplete, info);
+                .BeginRead(info.InfoBuffer, 0, info.InfoBuffer.Length, AsyncInfoReadComplete, info);
         }
 
         private void AsyncInfoReadComplete(IAsyncResult ar)
@@ -167,7 +167,7 @@ namespace Server3.Intercom.Network.NICHelpers
 
                     NetworkPacket recivedPacket = new NetworkPacket(infoBuffer, packetBuffer, this, PacketType.Tcp)
                     {
-                        TimeStamp = RecivedTime, 
+                        TimeStamp = RecivedTime,
                         Address = info.Client.Client.RemoteEndPoint as IPEndPoint
                     };
 
@@ -190,7 +190,7 @@ namespace Server3.Intercom.Network.NICHelpers
             {
                 if (packet.IsResponse)
                 {
-                    RequestInfo rq = null; 
+                    RequestInfo rq = null;
                     lock (_requestBank)
                     {
                         if (_requestBank.ContainsKey(packet.Address.Address))
@@ -231,7 +231,7 @@ namespace Server3.Intercom.Network.NICHelpers
         {
             lock (_requestBank)
             {
-                for(int i = 0; i<requestInfos.Count; i++)
+                for (int i = 0; i < requestInfos.Count; i++)
                 {
                     if (requestInfos[i].IsSend == false)
                     {
@@ -239,11 +239,11 @@ namespace Server3.Intercom.Network.NICHelpers
                         stream.Client.GetStream()
                             .BeginWrite(packet, 0, packet.Length,
                                 AsyncWriteComplete, stream);
-                        requestInfos[i].IsSend = true; 
+                        requestInfos[i].IsSend = true;
                         if (requestInfos[i].Request.Packet.Sesion == 0)
                         {
                             requestInfos.RemoveAt(i);
-                            i--; 
+                            i--;
                         }
                     }
                 }
@@ -304,8 +304,8 @@ namespace Server3.Intercom.Network.NICHelpers
                 if (_requestBank.ContainsKey(ip))
                 {
                     var list = _requestBank[ip];
-                    lock(list)
-                        list.Remove(rq); 
+                    lock (list)
+                        list.Remove(rq);
                 }
             }
         }
@@ -362,14 +362,14 @@ namespace Server3.Intercom.Network.NICHelpers
                 }
             }
 
-            return rq; 
+            return rq;
         }
 
         private void RequestTimeOutHandler(RequestInfo obj)
         {
             RemoveRequestInfo(obj);
             if (obj.Request.ErrorCallbak != null)
-                obj.Request.ErrorCallbak(obj.Request.Packet, ErrorType.TimeOut); 
+                obj.Request.ErrorCallbak(obj.Request.Packet, ErrorType.TimeOut);
         }
 
         #endregion
@@ -405,7 +405,7 @@ namespace Server3.Intercom.Network.NICHelpers
                 set
                 {
                     _lastTouch = value;
-                    if(CloseTimer != null)
+                    if (CloseTimer != null)
                         CloseTimer.Touch();
                 }
             }
@@ -413,40 +413,15 @@ namespace Server3.Intercom.Network.NICHelpers
             public void BufferReset()
             {
                 InfoBuffer = new byte[3];
-                PacketBuffer = null; 
+                PacketBuffer = null;
             }
-        }
 
-        private class RequestInfo
-        {
-            public RequestInfo(NetworkRequest request, List<RequestInfo> bank)
+            public PacketType Support
             {
-                IsSend = false;
-                Request = request;
-                
-                if (Request.ResponseCallback != null && request.Packet.IsResponse == false)
-                {
-                    lock (bank)
-                    {
-                        for (byte session = 1; session < 0x7F; session++)
-                        {
-                            var version = bank.FirstOrDefault((o) => o.Request.Packet.Sesion == session);
-                            if (version == null)
-                            {
-                                Request.Packet.Sesion = session;
-                                return;
-                            }
-                        }
-                        throw new IndexOutOfRangeException("Request session id is full");
-                    }
-                }
+                get { return PacketType.Tcp; }
             }
 
-            public NetworkRequest Request { get; set; }
-
-            public bool IsSend { get; set; }
-
-            public TimeOut TTL { get; set; } 
         }
+
     }
 }
