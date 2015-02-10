@@ -14,9 +14,9 @@ namespace Server3.Intercom.Network.Packets
     {
 
         IPacket _packet;
-        private IConnector _connector;
+        internal IConnector _connector;
 
-        public NetworkPacket(byte[] fullPacket, IConnector connector, PacketType type)
+        internal NetworkPacket(byte[] fullPacket, IConnector connector, PacketType type)
         {
             Type = type;
             if (type == PacketType.Tcp)
@@ -27,7 +27,7 @@ namespace Server3.Intercom.Network.Packets
         }
 
 
-        public NetworkPacket(int payloadLength, PacketType type, bool isSignal = false)
+        internal NetworkPacket(int payloadLength, PacketType type, bool isSignal = false)
         {
             Type = type; 
             if(type == PacketType.Tcp)
@@ -39,7 +39,7 @@ namespace Server3.Intercom.Network.Packets
         }
 
 
-        public NetworkPacket(byte[] info, byte[] payload, IConnector connector, PacketType type)
+        internal NetworkPacket(byte[] info, byte[] payload, IConnector connector, PacketType type)
         {
             _packet = new NetworkSegmentedPacket(info, payload);
             _connector = connector;
@@ -48,17 +48,12 @@ namespace Server3.Intercom.Network.Packets
 
         public void SendReply(NetworkPacket packet)
         {
-                SendReply(new NetworkRequest() {Packet = packet});
-        }
-
-        public void SendReply(NetworkRequest rq)
-        {
             if (_connector != null && IsResponse == false && Sesion != 0)
             {
-                rq.Packet.Address = Address;
-                rq.Packet.Sesion = Sesion;
-                rq.Packet.IsResponse = true;
-                _connector.Send(rq);
+                packet.Address = Address;
+                packet.Sesion = Sesion;
+                packet.IsResponse = true;
+                _connector.Send(packet);
             }
             else
             {
@@ -66,12 +61,12 @@ namespace Server3.Intercom.Network.Packets
             }
         }
 
-        public static int GetPacketLength(byte[] packetPart)
+        internal static int GetPacketLength(byte[] packetPart)
         {
             return packetPart[2] + ((packetPart[1] << 8) & 0x07); 
         }
 
-        public byte[] Packet
+        internal byte[] Packet
         {
             get { return _packet.Packet; }
         }
@@ -88,7 +83,7 @@ namespace Server3.Intercom.Network.Packets
             }
         }
 
-        public byte Sesion
+        internal byte Sesion
         {
             get
             {

@@ -5,9 +5,11 @@ namespace Server3.Intercom.Network.NICHelpers
 {
     public interface IConnector
     {
-        PacketType Support { get;  }
+        PacketType Supported { get;  }
+        
+        void Send(NetworkPacket request);
 
-        void Send(NetworkRequest request);
+        void Close();
 
         event Action<NetworkPacket, IConnector> OnPacketRecived;
     }

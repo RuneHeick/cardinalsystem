@@ -10,22 +10,20 @@ using Server3.Intercom.Network.Packets;
 
 namespace Server3.Intercom.Network
 {
-    class NIC
+    public class NIC
     {
         //Public 
         public IPEndPoint Ip { get; set; }
-        private const int RequestTTL_ms = 100;
-        private const int MaxRetransmit = 5; 
+        public const int RequestTTL_ms = 100;
+        public const int MaxRetransmit = 5; 
 
         //Privates 
         private readonly IConnector[] _connectors; 
-
         private Dictionary<byte, RequestInfo> _requests = new Dictionary<byte, RequestInfo>();
-
 
         public NIC(IPEndPoint ip)
         {
-            _connectors = new IConnector[]{new TCPConnector(ip), new UdpConnector(ip), new MulticastConnector(ip)};
+            _connectors = new IConnector[]{new TCPConnector(ip), new UdpConnector(ip), new MulticastConnector(new IPEndPoint(IPAddress.Parse("239.0.0.1"),2020))};
             this.Ip = ip;
 
             foreach (var connector in _connectors)
@@ -58,7 +56,10 @@ namespace Server3.Intercom.Network
             }
             else
             {
-                
+                // awnser multicast with UDP 
+                if (packet.Type == PacketType.Multicast)
+                    packet._connector = _connectors.FirstOrDefault((o) => o.Supported == PacketType.Udp);
+                EventBus.Publich<NetworkPacket>(packet, false);
             }
         }
 
@@ -87,9 +88,9 @@ namespace Server3.Intercom.Network
         {
             foreach (var con in _connectors)
             {
-                if (con.Support == networkPacket.Type)
+                if (con.Supported == networkPacket.Type)
                 {
-                    // con.Send(networkPacket);
+                    con.Send(networkPacket);
                     return;
                 }
             }
@@ -127,10 +128,15 @@ namespace Server3.Intercom.Network
                 };
 
 
-                if(request.Packet.Type == PacketType.Tcp)
+                if (request.Packet.Type == PacketType.Tcp)
                     info.TimeToLive = TimeOut.Create(RequestTTL_ms, info, RequestTimeOut);
                 else
+                {
+                    if (request.Packet.Type == PacketType.Multicast)
+                        info.MultibleRecivers = true;
                     info.TimeToLive = TimeOut.Create(RequestTTL_ms, info, RequestRetransmit);
+                }
+                    
 
 
                 _requests.Add(session, info);
@@ -162,6 +168,13 @@ namespace Server3.Intercom.Network
             }
         }
 
+        public void Close()
+        {
+            foreach (var con in _connectors)
+            {
+                con.Close();
+            }
+        }
 
     }
 
