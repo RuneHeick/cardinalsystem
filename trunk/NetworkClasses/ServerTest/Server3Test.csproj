@@ -50,9 +50,8 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <Compile Include="UdpConnectorTest.cs" />
-    <Compile Include="TcpConnectorTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="NICTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Server3\Server3.csproj">

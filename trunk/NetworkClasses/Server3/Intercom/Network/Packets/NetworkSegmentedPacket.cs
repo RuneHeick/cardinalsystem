@@ -24,7 +24,10 @@ namespace Server3.Intercom.Network.Packets
         {
             get 
             {
-                throw new NotImplementedException();
+                byte[] fullPacket = new byte[_info.Length + _packet.Length];
+                Array.Copy(_info,0,fullPacket,0,_info.Length);
+                Array.Copy(_packet, 0, fullPacket, _info.Length, _packet.Length);
+                return fullPacket;
             }
         }
 
