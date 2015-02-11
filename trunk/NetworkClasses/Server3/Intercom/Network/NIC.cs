@@ -19,7 +19,13 @@ namespace Server3.Intercom.Network
         public const int MaxRetransmit = 5;
         public IPEndPoint[] KnownEndPoints
         {
-            get { return _knownEndPoints.Values.ToArray(); }
+            get
+            {
+                IPEndPoint[] item;
+                lock (_knownEndPoints)
+                    item = _knownEndPoints.Values.ToArray();
+                return item; 
+            }
         }
 
 
@@ -224,9 +230,8 @@ namespace Server3.Intercom.Network
                 if (_knownEndPoints.ContainsKey(address))
                     _knownEndPoints[address].Port = port;
                 else
-                {
                     _knownEndPoints.Add(address, new IPEndPoint(address, port));
-                }
+
             }
         }
 
