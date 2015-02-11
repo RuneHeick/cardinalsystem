@@ -130,10 +130,10 @@ namespace ServerTest
         public void TCPSignal()
         {
             EventBus.Subscribe<NetworkPacket>((o)=>GetPacket(o, PacketType.Tcp));
-            NetworkPacket packet = NetworkRequest.CreateSignal(3, PacketType.Tcp);
-            packet[0] = 2;
-            packet.Address = NetworkInterface2.Ip; 
-            NetworkInterface1.Send(packet);
+            NetworkRequest Rq = NetworkRequest.CreateSignal(3, PacketType.Tcp);
+            Rq.Packet[0] = 2;
+            Rq.Packet.Address = NetworkInterface2.Ip; 
+            NetworkInterface1.Send(Rq);
 
             while (!done) ;
 
@@ -143,10 +143,10 @@ namespace ServerTest
         public void UDPSignal()
         {
             EventBus.Subscribe<NetworkPacket>((o)=>GetPacket(o,PacketType.Udp));
-            NetworkPacket packet = NetworkRequest.CreateSignal(3, PacketType.Udp);
-            packet[0] = 2;
-            packet.Address = NetworkInterface2.Ip;
-            NetworkInterface1.Send(packet);
+            NetworkRequest Rq = NetworkRequest.CreateSignal(3, PacketType.Udp);
+            Rq.Packet[0] = 2;
+            Rq.Packet.Address = NetworkInterface2.Ip;
+            NetworkInterface1.Send(Rq);
 
             while (!done) ;
 
@@ -156,10 +156,10 @@ namespace ServerTest
         public void MulticastSignal()
         {
             EventBus.Subscribe<NetworkPacket>((o) => GetPacket(o, PacketType.Multicast));
-            NetworkPacket packet = NetworkRequest.CreateSignal(3, PacketType.Multicast);
-            packet.Command = 5; 
-            packet[0] = 2;
-            packet.Address = NetworkInterface2.Ip;
+            NetworkRequest packet = NetworkRequest.CreateSignal(3, PacketType.Multicast);
+            packet.Packet.Command = 5; 
+            packet.Packet[0] = 2;
+            packet.Packet.Address = NetworkInterface2.Ip;
             NetworkInterface1.Send(packet);
 
             while (!done) ;

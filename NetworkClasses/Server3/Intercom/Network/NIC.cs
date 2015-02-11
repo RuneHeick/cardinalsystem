@@ -46,8 +46,15 @@ namespace Server3.Intercom.Network
             }
 
             SendPortMessage(false);
+            EventBus.Subscribe<NetworkRequest>(HandleNewRequest); 
         }
 
+        private void HandleNewRequest(NetworkRequest obj)
+        {
+            Send(obj);
+        }
+
+        #region Send/Recive
         private void NetworkPacketRecived(NetworkPacket packet, IConnector connector)
         {
             if (packet.IsResponse)
@@ -202,6 +209,8 @@ namespace Server3.Intercom.Network
             }
         }
 
+        #endregion
+
         public void Close()
         {
             foreach (var con in _connectors)
@@ -230,7 +239,16 @@ namespace Server3.Intercom.Network
                 if (_knownEndPoints.ContainsKey(address))
                     _knownEndPoints[address].Port = port;
                 else
+                {
                     _knownEndPoints.Add(address, new IPEndPoint(address, port));
+                    ClientFoundEvent Event = new ClientFoundEvent()
+                    {
+                        Address = _knownEndPoints[address],
+                        Connector = this
+                    };
+                    EventBus.Publich(Event);
+                }
+                   
 
             }
         }

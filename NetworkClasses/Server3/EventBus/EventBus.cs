@@ -27,7 +27,7 @@ namespace Server3
                 Monitor.Enter(_colletion);
                 for (int i = 0; i < _colletion.Length; i++)
                 {
-                    if (_colletion[i].Type == typeof(T) || typeof(T).IsAssignableFrom(_colletion[i].Type))
+                    if (_colletion[i] != null && (_colletion[i].Type == typeof(T) || typeof(T).IsAssignableFrom(_colletion[i].Type)))
                     {
                         var cItem = (CollectionItem<T>) _colletion[i];
                         Monitor.Exit(_colletion);
