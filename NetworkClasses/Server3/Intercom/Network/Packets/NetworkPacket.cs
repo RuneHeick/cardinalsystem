@@ -27,6 +27,30 @@ namespace Server3.Intercom.Network.Packets
         }
 
 
+        public static void Copy(NetworkPacket destination, int destinationindex, byte[] source, int sourceindex, int len)
+        {
+            for (int i = 0; i < len; i++)
+            {
+                destination[i + destinationindex] = source[i + sourceindex];
+            }
+        }
+
+        public static void Copy(byte[] destination, int destinationindex, NetworkPacket source, int sourceindex, int len)
+        {
+            for (int i = 0; i < len; i++)
+            {
+                destination[i + destinationindex] = source[i + sourceindex];
+            }
+        }
+
+        public static void Copy(NetworkPacket destination, int destinationindex, NetworkPacket source, int sourceindex, int len)
+        {
+            for (int i = 0; i < len; i++)
+            {
+                destination[i + destinationindex] = source[i + sourceindex];
+            }
+        }
+
         internal NetworkPacket(int payloadLength, PacketType type, bool isSignal = false)
         {
             Type = type; 

@@ -40,6 +40,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EventBus\EventBus.cs" />
+    <Compile Include="Intercom\Network\InterComCommands.cs" />
     <Compile Include="Intercom\Network\Packets\IPacket.cs" />
     <Compile Include="Intercom\Network\Packets\NetworkPacket.cs" />
     <Compile Include="Intercom\Network\Packets\NetworkFullPacket.cs" />

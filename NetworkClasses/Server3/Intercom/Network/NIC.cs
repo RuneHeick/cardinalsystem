@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
@@ -15,12 +16,19 @@ namespace Server3.Intercom.Network
         //Public 
         public IPEndPoint Ip { get; set; }
         public const int RequestTTL_ms = 100;
-        public const int MaxRetransmit = 5; 
+        public const int MaxRetransmit = 5;
+        public IPEndPoint[] KnownEndPoints
+        {
+            get { return _knownEndPoints.Values.ToArray(); }
+        }
+
 
         //Privates 
         private readonly IConnector[] _connectors; 
-        private Dictionary<byte, RequestInfo> _requests = new Dictionary<byte, RequestInfo>();
+        private readonly Dictionary<byte, RequestInfo> _requests = new Dictionary<byte, RequestInfo>();
+        private readonly Dictionary<IPAddress, IPEndPoint> _knownEndPoints = new Dictionary<IPAddress, IPEndPoint>();
 
+        
         public NIC(IPEndPoint ip)
         {
             _connectors = new IConnector[]{new TCPConnector(ip), new UdpConnector(ip), new MulticastConnector(new IPEndPoint(IPAddress.Parse("239.0.0.1"),2020))};
@@ -58,7 +66,25 @@ namespace Server3.Intercom.Network
             {
                 // awnser multicast with UDP 
                 if (packet.Type == PacketType.Multicast)
-                    packet._connector = _connectors.FirstOrDefault((o) => o.Supported == PacketType.Udp);
+                {
+
+                    if (packet.Command == (byte) Intercom.InterComCommands.PortMessage)
+                    {
+                        HandlePortMessage(packet);
+                        return;
+                    }
+
+                    if (_knownEndPoints.ContainsKey(packet.Address.Address))
+                    {
+                        packet._connector = _connectors.FirstOrDefault((o) => o.Supported == PacketType.Udp);
+                        packet.Address = _knownEndPoints[packet.Address.Address];
+                    }
+                    else
+                    {
+                        SendPortMessage(false);
+                    }
+                }
+
                 EventBus.Publich<NetworkPacket>(packet, false);
             }
         }
@@ -176,6 +202,42 @@ namespace Server3.Intercom.Network
             }
         }
 
+        #region PortMessage
+        private void HandlePortMessage(NetworkPacket packet)
+        {
+            // is Request 
+            if (packet[0] == 0)
+            {
+                SendPortMessage(true);
+            }
+            byte[] data = new byte[4];
+            NetworkPacket.Copy(data, 0, packet, 1, 4);
+            AddToKnownAddresses(packet.Address.Address, BitConverter.ToInt32(data, 0));
+        }
+
+        private void AddToKnownAddresses(IPAddress address, int port)
+        {
+            lock (_knownEndPoints)
+            {
+                if (_knownEndPoints.ContainsKey(address))
+                    _knownEndPoints[address].Port = port;
+                else
+                {
+                    _knownEndPoints.Add(address, new IPEndPoint(address, port));
+                }
+            }
+        }
+
+        private void SendPortMessage(bool isReply)
+        {
+            NetworkPacket portMessage = new NetworkPacket(5, PacketType.Multicast, true);
+            NetworkPacket.Copy(portMessage, 1, BitConverter.GetBytes(Ip.Port), 0, 4);
+            portMessage[0] = (byte)(isReply ? 1 : 0); 
+
+            Send(portMessage);
+        }
+
+        #endregion
     }
 
     internal class RequestInfo
