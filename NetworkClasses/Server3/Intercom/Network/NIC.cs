@@ -38,6 +38,8 @@ namespace Server3.Intercom.Network
             {
                 connector.OnPacketRecived += NetworkPacketRecived;
             }
+
+            SendPortMessage(false);
         }
 
         private void NetworkPacketRecived(NetworkPacket packet, IConnector connector)
