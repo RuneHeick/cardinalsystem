@@ -157,6 +157,7 @@ namespace ServerTest
         {
             EventBus.Subscribe<NetworkPacket>((o) => GetPacket(o, PacketType.Multicast));
             NetworkPacket packet = NetworkRequest.CreateSignal(3, PacketType.Multicast);
+            packet.Command = 5; 
             packet[0] = 2;
             packet.Address = NetworkInterface2.Ip;
             NetworkInterface1.Send(packet);
