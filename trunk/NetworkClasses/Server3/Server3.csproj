@@ -40,6 +40,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EventBus\EventBus.cs" />
+    <Compile Include="Intercom\Network\ClientFoundEvent.cs" />
     <Compile Include="Intercom\Network\InterComCommands.cs" />
     <Compile Include="Intercom\Network\Packets\IPacket.cs" />
     <Compile Include="Intercom\Network\Packets\NetworkPacket.cs" />
@@ -52,6 +53,9 @@
     <Compile Include="Intercom\Network\NICHelpers\UDPConnector.cs" />
     <Compile Include="Intercom\Network\Packets\NetworkSegmentedPacket.cs" />
     <Compile Include="Intercom\Network\Packets\NetworkShortPacket.cs" />
+    <Compile Include="Intercom\SharedFile\Files\BaseFile.cs" />
+    <Compile Include="Intercom\SharedFile\FileManager.cs" />
+    <Compile Include="Intercom\SharedFile\Files\SystemFileIndexFile.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utility\Crc.cs" />
     <Compile Include="Utility\IPEqualityComparer.cs" />

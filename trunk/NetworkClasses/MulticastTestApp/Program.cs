@@ -5,6 +5,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Server3.Intercom.Network;
+using Server3.Intercom.SharedFile;
 
 namespace MulticastTestApp
 {
@@ -16,7 +17,7 @@ namespace MulticastTestApp
         {
 
             NIC network = new NIC(new IPEndPoint(IPAddress.Any, 5050));
-
+            SharedFileManager fileManager = new SharedFileManager("Folder", IPAddress.Any);
             int known = 0;
 
             while (true)

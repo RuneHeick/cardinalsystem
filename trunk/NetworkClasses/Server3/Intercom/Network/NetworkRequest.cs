@@ -8,9 +8,9 @@ namespace Server3.Intercom.Network
     public class NetworkRequest
     {
 
-        public static NetworkPacket CreateSignal(int packetLength, PacketType type)
+        public static NetworkRequest CreateSignal(int packetLength, PacketType type)
         {
-            return new NetworkPacket(packetLength, type, true);
+            return Create(packetLength, type, null, null);
         }
 
         public static NetworkRequest Create(int packetLength, PacketType type, Action<NetworkPacket> callback ,
