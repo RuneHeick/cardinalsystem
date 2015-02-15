@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Server3.Intercom.Network;
 using Server3.Intercom.SharedFile;
@@ -36,6 +37,15 @@ namespace MulticastTestApp
                     known = count;
                     Console.WriteLine("Known added with: " + network.KnownEndPoints[count-1].ToString());
                 }
+
+                Thread.Sleep(5000);
+
+                using (var file = fileManager.GetFile<BaseFile>("Test", address.Address, true))
+                {
+                    file.Data = new byte[12];
+                }
+
+
             }
 
 

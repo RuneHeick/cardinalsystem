@@ -21,9 +21,11 @@ namespace Server3.Intercom.SharedFile
     {
         private readonly string _baseDirectory;
         private readonly IPEndPoint _me;
-        private readonly Dictionary<IPAddress, LocalFileManager> _knownFileManagers = new Dictionary<IPAddress, LocalFileManager>();
 
-        public SharedFileManager(string baseDirectory, IPEndPoint me  )
+        private readonly Dictionary<IPAddress, LocalFileManager> _knownFileManagers =
+            new Dictionary<IPAddress, LocalFileManager>();
+
+        public SharedFileManager(string baseDirectory, IPEndPoint me)
         {
             _baseDirectory = baseDirectory;
             _me = me;
@@ -55,7 +57,7 @@ namespace Server3.Intercom.SharedFile
             lock (_knownFileManagers)
             {
                 DirectoryInfo folder = new DirectoryInfo(_baseDirectory + "/" + client.Address.Address);
-                if(!folder.Exists)
+                if (!folder.Exists)
                     folder.Create();
                 if (!_knownFileManagers.ContainsKey(client.Address.Address))
                 {
@@ -81,10 +83,10 @@ namespace Server3.Intercom.SharedFile
 
             if (manager != null)
             {
-                return manager.GetFile<T>(name, create); 
+                return manager.GetFile<T>(name, create);
             }
 
-            return null; 
+            return null;
         }
 
         public UInt32 GetHash(string name, IPAddress address)
@@ -102,24 +104,27 @@ namespace Server3.Intercom.SharedFile
             }
 
             return 0;
-        } 
+        }
 
         #endregion
 
-        
+
     }
 
 
-    class LocalFileManager
+    internal class LocalFileManager
     {
         private readonly IPEndPoint _address;
         private readonly DirectoryInfo _folder;
         private readonly Dictionary<string, BaseFile> _openFiles = new Dictionary<string, BaseFile>();
+        private UInt32 _infoFileHash = 0;
 
-        private byte _fileReciveSession = 0; 
+        private byte _fileReciveSession = 0;
         private readonly Dictionary<byte, ReciveFile> _recivedFiles = new Dictionary<byte, ReciveFile>();
 
         private const string InfoFileName = "FileInfo";
+
+        private bool isLocal { get; set; }
 
         public LocalFileManager(IPEndPoint address, DirectoryInfo folder)
         {
@@ -131,7 +136,14 @@ namespace Server3.Intercom.SharedFile
 
         public void Setup()
         {
-            EventBus.Subscribe<NetworkPacket>(NetworkPacketRecived, (p) => p.Address.Address.Equals(_address.Address) && p.Command == (byte)InterComCommands.PacketRecive);
+            isLocal = false;
+
+            EventBus.Subscribe<NetworkPacket>(NetworkPacketRecived,
+                (p) => p.Address.Address.Equals(_address.Address) && p.Command == (byte) InterComCommands.PacketRecive);
+
+            EventBus.Subscribe<NetworkPacket>(MulticastUpdateRecived,
+                (p) => p.Address.Address.Equals(_address.Address) && p.Command == (byte)InterComCommands.PacketInfo && p.Type == PacketType.Multicast);
+
             var filecontainor = GetFile<SystemFileIndexFile>(InfoFileName);
             if (filecontainor == null)
                 RequestFile(InfoFileName);
@@ -139,20 +151,15 @@ namespace Server3.Intercom.SharedFile
 
         public void SetupLocal()
         {
-            var filecontainor = GetFile<SystemFileIndexFile>(InfoFileName, true);
-            FileInfo[] files = _folder.GetFiles();
+            isLocal = true;
+            LocalSystemFileIndexFileInit();
 
-            foreach (var file in files)
-            {
-                if (file.Name != InfoFileName)
-                {
-                    var hash = GetHash(file.Name);
-                    filecontainor.AddFileInfo(file.Name, hash);
-                }
-            }
+            var testfile = GetFile<BaseFile>("TestFile", true);
+            testfile.Data = new byte[] {(byte) 'a', (byte) 'b', (byte) 'c'};
+            testfile.Dispose();
 
-            filecontainor.Dispose();
-            EventBus.Subscribe<NetworkPacket>(NetworkPacketRecived, (p) => p.Command == (byte)InterComCommands.PacketInfo);
+            EventBus.Subscribe<NetworkPacket>(NetworkPacketRecived,
+                (p) => p.Command == (byte) InterComCommands.PacketInfo);
         }
 
         #endregion
@@ -170,15 +177,15 @@ namespace Server3.Intercom.SharedFile
                 if (File.Exists(_folder.FullName + "/" + name) || create)
                     file = CreateOrOpenFile<T>(name);
 
-                if(file != null)
+                if (file != null)
                     _openFiles.Add(file.Name, file);
             }
-            return file; 
+            return file;
         }
 
         public bool Exists(string name)
         {
-            return File.Exists(_folder.FullName + "/" + name); 
+            return File.Exists(_folder.FullName + "/" + name);
         }
 
         public UInt32 GetHash(string name)
@@ -197,7 +204,7 @@ namespace Server3.Intercom.SharedFile
                     byte[] hash = new byte[Crc32.HashSize];
                     r.Read(hash, 0, Crc32.HashSize);
                     r.Close();
-                    return BitConverter.ToUInt32(hash,0);
+                    return BitConverter.ToUInt32(hash, 0);
                 }
             }
             return 0;
@@ -218,7 +225,7 @@ namespace Server3.Intercom.SharedFile
                             long length = fileInfo.Length - Crc32.HashSize;
                             byte[] data = new byte[length];
                             byte[] hash = new byte[Crc32.HashSize];
-                            r.Read(data, 0, (int)length);
+                            r.Read(data, 0, (int) length);
                             r.Read(hash, 0, Crc32.HashSize);
                             r.Close();
 
@@ -226,9 +233,12 @@ namespace Server3.Intercom.SharedFile
                             {
                                 Data = data,
                                 Name = name,
-                                Hash = BitConverter.ToUInt32(hash,0),
-                                CloseAction = SaveFile
+                                Hash = BitConverter.ToUInt32(hash, 0),
                             };
+                            if (!isLocal)
+                                file.CloseAction = SaveFile;
+                            else
+                                file.CloseAction = CloseFile;
 
                         }
                     }
@@ -247,7 +257,16 @@ namespace Server3.Intercom.SharedFile
                     };
                 }
 
-                return file; 
+                return file;
+            }
+        }
+
+        private void CloseFile(BaseFile file)
+        {
+            lock (_openFiles)
+            {
+                if (_openFiles.ContainsKey(file.Name))
+                    _openFiles.Remove(file.Name);
             }
         }
 
@@ -261,7 +280,7 @@ namespace Server3.Intercom.SharedFile
                 try
                 {
                     byte[] hashbyte = BitConverter.GetBytes(Crc32.CalculateHash(file.Data));
-                    using (FileStream w = File.OpenWrite(_folder.FullName+"/" + file.Name))
+                    using (FileStream w = File.OpenWrite(_folder.FullName + "/" + file.Name))
                     {
                         w.Write(file.Data, 0, file.Data.Length);
                         w.Write(hashbyte, 0, hashbyte.Length);
@@ -280,7 +299,13 @@ namespace Server3.Intercom.SharedFile
                     {
                         filecontainor.AddFileInfo(file.Name, file.Hash);
                         filecontainor.Dispose();
+                        if (_infoFileHash != filecontainor.Hash)
+                        {
+                            SendMulticastUpdate();
+                            _infoFileHash = filecontainor.Hash;
+                        }
                     }
+
                 }
             }
         }
@@ -293,10 +318,10 @@ namespace Server3.Intercom.SharedFile
         {
             switch (packet.Command)
             {
-                case (byte)InterComCommands.PacketInfo:
+                case (byte) InterComCommands.PacketInfo:
                     InfoPacketRecived(packet);
                     break;
-                case (byte)InterComCommands.PacketRecive:
+                case (byte) InterComCommands.PacketRecive:
                     FilePacketRecived(packet);
                     break;
             }
@@ -326,25 +351,25 @@ namespace Server3.Intercom.SharedFile
 
         private void FileReciveDone(ReciveFile recivedFile)
         {
-            Console.WriteLine("File recived from "+_address.Address);
+            Console.WriteLine("File recived from " + _address.Address);
             byte[] file = new byte[recivedFile.Size];
-            int startIndex = 0; 
+            int startIndex = 0;
             int session = 0;
-            
+
             while (true)
             {
                 var p = recivedFile.Packets.FirstOrDefault((o) => (o[1] & 0x7F) == session);
                 NetworkPacket.Copy(file, startIndex, p, 2, p.PayloadLength - 2);
                 startIndex += p.PayloadLength - 2;
-                session++; 
-                if((p[1] & 0x80)>0)
+                session++;
+                if ((p[1] & 0x80) > 0)
                     break;
             }
 
             BaseFile fileinfo;
             using (fileinfo = CreateOrOpenFile<BaseFile>(recivedFile.Name))
             {
-                fileinfo.Data = file; 
+                fileinfo.Data = file;
             }
 
             if (fileinfo.Name == InfoFileName)
@@ -364,20 +389,20 @@ namespace Server3.Intercom.SharedFile
             lock (_recivedFiles)
             {
                 byte i = _fileReciveSession;
-                for (; i != _fileReciveSession - 1; i = (byte)((i+1) %0xFF))
+                for (; i != _fileReciveSession - 1; i = (byte) ((i + 1)%0xFF))
                 {
                     if (!_recivedFiles.ContainsKey(i))
                     {
-                        _fileReciveSession = i; 
+                        _fileReciveSession = i;
                         break;
                     }
-                       
+
                 }
                 rq.Packet.Address = _address;
-                rq.Packet.Command = (byte)InterComCommands.PacketInfo;
+                rq.Packet.Command = (byte) InterComCommands.PacketInfo;
                 ReciveFile rfile = new ReciveFile() {Name = name, Session = i, Retransmit = retransmit};
                 rfile.MaxWaitTimeout = TimeOut.Create(2000, rfile, FileRequestTimeOut);
-                
+
                 _recivedFiles.Add(i, rfile);
                 rq.Packet[0] = i;
                 for (int z = 0; z < name.Length; z++)
@@ -409,12 +434,12 @@ namespace Server3.Intercom.SharedFile
             var id = packet[0];
             var len = packet.PayloadLength - 1;
             StringBuilder sb = new StringBuilder(len);
-            for (int i = 1; i < len+1; i++)
+            for (int i = 1; i < len + 1; i++)
             {
                 sb.Append((char) packet[i]);
             }
             string name = sb.ToString();
-            SendFile(id, name, packet.Address); 
+            SendFile(id, name, packet.Address);
         }
 
         private void SendFile(byte id, string name, IPEndPoint iPEndPoint)
@@ -433,12 +458,12 @@ namespace Server3.Intercom.SharedFile
                     if (size + packetLength == data.Length)
                         done = true;
 
-                    NetworkRequest rq = NetworkRequest.CreateSignal(packetLength+2, PacketType.Tcp);
+                    NetworkRequest rq = NetworkRequest.CreateSignal(packetLength + 2, PacketType.Tcp);
                     NetworkPacket.Copy(rq.Packet, 2, data, size, packetLength);
-                    rq.Packet.Address = iPEndPoint; 
+                    rq.Packet.Address = iPEndPoint;
                     rq.Packet[0] = id;
-                    rq.Packet[1] = (byte)((session++) | (done ? 0x80 : 0x00));
-                    rq.Packet.Command = (byte)InterComCommands.PacketRecive;
+                    rq.Packet[1] = (byte) ((session++) | (done ? 0x80 : 0x00));
+                    rq.Packet.Command = (byte) InterComCommands.PacketRecive;
                     EventBus.Publich(rq);
 
                     size += packetLength;
@@ -462,7 +487,7 @@ namespace Server3.Intercom.SharedFile
 
             public void Add(NetworkPacket packet)
             {
-                Size += packet.PayloadLength-2;
+                Size += packet.PayloadLength - 2;
                 Packets.Add(packet);
             }
 
@@ -472,19 +497,57 @@ namespace Server3.Intercom.SharedFile
 
         #region FileDescriptionRecived
 
-
-
         private void FileDescriptionRecived(SystemFileIndexFile systemFileIndexFile)
         {
+            _infoFileHash = systemFileIndexFile.Hash; 
             foreach (var info in systemFileIndexFile.filesInformation)
             {
                 if ((!Exists(info.Name)) || GetHash(info.Name) != info.Hash)
                 {
-                    RequestFile(info.Name); 
+                    RequestFile(info.Name);
                 }
             }
         }
 
+        private void LocalSystemFileIndexFileInit()
+        {
+            var filecontainor = GetFile<SystemFileIndexFile>(InfoFileName, true);
+            FileInfo[] files = _folder.GetFiles();
+
+            foreach (var file in files)
+            {
+                if (file.Name != InfoFileName)
+                {
+                    var hash = GetHash(file.Name);
+                    filecontainor.AddFileInfo(file.Name, hash);
+                }
+            }
+
+            filecontainor.Dispose();
+            _infoFileHash = filecontainor.Hash;
+        }
+
+        private void SendMulticastUpdate(UInt32 hash)
+        {
+            NetworkRequest rq = NetworkRequest.CreateSignal(4, PacketType.Multicast);
+            NetworkPacket.Copy(rq.Packet, 0, BitConverter.GetBytes(hash), 0, 4);
+            rq.Packet.Command = (byte)InterComCommands.PacketInfo;
+            EventBus.Publich(rq);
+        }
+
+        private void MulticastUpdateRecived(NetworkPacket packet)
+        {
+            if (packet.PayloadLength == 4)
+            {
+                byte[] hashBytes = new byte[4];
+                NetworkPacket.Copy(hashBytes, 0, packet, 0, 4);
+                UInt32 hash = BitConverter.ToUInt32(hashBytes, 0);
+
+                if (_infoFileHash != hash)
+                    RequestFile(InfoFileName);
+
+            }
+        }
 
         #endregion
 
