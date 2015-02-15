@@ -4,19 +4,25 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Runtime.Remoting.Metadata.W3cXsd2001;
+using System.Security.Cryptography;
+using System.Security.Policy;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Server3.Intercom.Network;
+using Server3.Intercom.Network.Packets;
+using Server3.Intercom.SharedFile.Files;
+using Server3.Utility;
 
 namespace Server3.Intercom.SharedFile
 {
     public class SharedFileManager
     {
         private readonly string _baseDirectory;
-        private readonly IPAddress _me;
+        private readonly IPEndPoint _me;
         private readonly Dictionary<IPAddress, LocalFileManager> _knownFileManagers = new Dictionary<IPAddress, LocalFileManager>();
 
-        public SharedFileManager(string baseDirectory, IPAddress me  )
+        public SharedFileManager(string baseDirectory, IPEndPoint me  )
         {
             _baseDirectory = baseDirectory;
             _me = me;
@@ -29,25 +35,20 @@ namespace Server3.Intercom.SharedFile
 
         private void InitDirectory()
         {
-            DirectoryInfo mainDir = new DirectoryInfo(_baseDirectory);
-            if (mainDir.Exists)
+            DirectoryInfo subDir = new DirectoryInfo(_baseDirectory + "/" + _me.Address);
+            if (!subDir.Exists)
             {
-                DirectoryInfo[] dirs = mainDir.GetDirectories();
-                foreach (var dir in dirs)
-                {
-                    string name = dir.Name;
-                    IPAddress address = IPAddress.Parse(name);
-                    LocalFileManager localFileManager = new LocalFileManager(address, dir);
-                    lock (_knownFileManagers)
-                    {
-                        _knownFileManagers.Add(address, localFileManager);
-                    }
-                }
+                subDir.Create();
             }
-            else
+
+            LocalFileManager localFileManager = new LocalFileManager(_me, subDir);
+            localFileManager.GetFile<SystemFileIndexFile>("FileInfo", true); 
+            lock (_knownFileManagers)
             {
-                mainDir.Create();
+                _knownFileManagers.Add(_me.Address, localFileManager);
             }
+
+
         }
 
         private void NewClientFount(ClientFoundEvent client)
@@ -59,8 +60,9 @@ namespace Server3.Intercom.SharedFile
                     folder.Create();
                 if (!_knownFileManagers.ContainsKey(client.Address.Address))
                 {
-                    LocalFileManager localFileManager = new LocalFileManager(client.Address.Address, folder);
+                    LocalFileManager localFileManager = new LocalFileManager(client.Address, folder);
                     _knownFileManagers.Add(client.Address.Address, localFileManager);
+                    localFileManager.Setup();
                 }
             }
         }
@@ -86,6 +88,22 @@ namespace Server3.Intercom.SharedFile
             return null; 
         }
 
+        public byte[] GetHash(string name, IPAddress address)
+        {
+            LocalFileManager manager = null;
+            lock (_knownFileManagers)
+            {
+                if (_knownFileManagers.ContainsKey(address))
+                    manager = _knownFileManagers[address];
+            }
+
+            if (manager != null)
+            {
+                return manager.GetHash(name);
+            }
+
+            return null;
+        } 
 
         #endregion
 
@@ -99,31 +117,77 @@ namespace Server3.Intercom.SharedFile
 
     class LocalFileManager
     {
-        private readonly IPAddress _address;
+        private readonly IPEndPoint _address;
         private readonly DirectoryInfo _folder;
         private readonly Dictionary<string, BaseFile> _openFiles = new Dictionary<string, BaseFile>();
 
-        public LocalFileManager(IPAddress address, DirectoryInfo folder)
+        private readonly Dictionary<byte, ReciveFile> _recivedFiles = new Dictionary<byte, ReciveFile>(); 
+
+        public LocalFileManager(IPEndPoint address, DirectoryInfo folder)
         {
             _address = address;
             _folder = folder;
+            NetworkSetup();
+            
         }
+
+        private void FolderSetup()
+        {
+            var filecontainor = GetFile<SystemFileIndexFile>("FileInfo"); 
+            if(filecontainor == null)
+                RequestFile("FileInfo");
+        }
+
+        public void Setup()
+        {
+            FolderSetup(); 
+        }
+
+
+        #region FileSystem
 
         public T GetFile<T>(string name, bool create = false) where T : BaseFile, new()
         {
+            T file = null;
             lock (_openFiles)
             {
                 if (_openFiles.ContainsKey(name))
                     return _openFiles[name] as T;
 
-                T file = null;
                 if (File.Exists(_folder.FullName + "/" + name) || create)
                     file = CreateOrOpenFile<T>(name);
 
                 if(file != null)
                     _openFiles.Add(file.Name, file);
             }
-            return null; 
+            return file; 
+        }
+
+        public bool Exists(string name)
+        {
+            return File.Exists(_folder.FullName + "/" + name); 
+        }
+
+        public byte[] GetHash(string name)
+        {
+            lock (_openFiles)
+            {
+                if (_openFiles.ContainsKey(name))
+                    return _openFiles[name].Hash;
+            }
+            FileInfo file = new FileInfo(_folder.FullName + "/" + name);
+            if (file.Exists)
+            {
+                using (FileStream r = file.OpenRead())
+                {
+                    r.Seek(file.Length - Crc32.HashSize, SeekOrigin.Begin);
+                    byte[] hash = new byte[Crc32.HashSize];
+                    r.Read(hash, 0, Crc32.HashSize);
+                    r.Close();
+                    return hash;
+                }
+            }
+            return null;
         }
 
         private T CreateOrOpenFile<T>(string name) where T : BaseFile, new()
@@ -131,32 +195,45 @@ namespace Server3.Intercom.SharedFile
             lock (_folder)
             {
                 T file = null;
-                try
+                FileInfo fileInfo = new FileInfo(_folder.FullName + "/" + name);
+                if (fileInfo.Exists)
                 {
-                    if (File.Exists(_folder.FullName + "/" + name))
+                    try
                     {
-                        byte[] data = File.ReadAllBytes(_folder.FullName + "/" + name);
-                        file = new T()
+                        using (FileStream r = fileInfo.OpenRead())
                         {
-                            Data = data,
-                            Name = name,
-                            CloseAction = SaveFile
-                        };
+                            long length = fileInfo.Length - Crc32.HashSize;
+                            byte[] data = new byte[length];
+                            byte[] hash = new byte[Crc32.HashSize];
+                            r.Read(data, 0, (int)length);
+                            r.Read(hash, 0, Crc32.HashSize);
+                            r.Close();
+
+                            file = new T()
+                            {
+                                Data = data,
+                                Name = name,
+                                Hash = hash,
+                                CloseAction = SaveFile
+                            };
+
+                        }
                     }
-                    else
+                    catch
                     {
-                        file = new T()
-                        {
-                            Data = new byte[0],
-                            Name = name,
-                            CloseAction = SaveFile
-                        };
+                        throw;
                     }
                 }
-                catch
+                else
                 {
-                    // ignored
+                    file = new T()
+                    {
+                        Data = new byte[0],
+                        Name = name,
+                        CloseAction = SaveFile
+                    };
                 }
+
                 return file; 
             }
         }
@@ -170,13 +247,170 @@ namespace Server3.Intercom.SharedFile
 
                 try
                 {
-                    File.WriteAllBytes(file.Name, file.Data);
+                    byte[] hashbyte = Crc32.UInt32ToBigEndianBytes(Crc32.CalculateHash(file.Data));
+                    using (FileStream w = File.OpenWrite(_folder.FullName+"/" + file.Name))
+                    {
+                        w.Write(file.Data, 0, file.Data.Length);
+                        w.Write(hashbyte, 0, hashbyte.Length);
+                        w.Close();
+                    }
                 }
-                catch (Exception)
+                catch
                 {
                     // ignored
                 }
             }
         }
+
+        #endregion
+
+        #region Network 
+
+        private void NetworkSetup()
+        {
+            EventBus.Subscribe<NetworkPacket>(NetworkPacketRecived, (p)=>p.Address.Address.Equals(_address));
+        }
+
+        private void NetworkPacketRecived(NetworkPacket packet)
+        {
+            switch (packet.Command)
+            {
+                case (byte)InterComCommands.PacketInfo:
+                    InfoPacketRecived(packet);
+                    break;
+                case (byte)InterComCommands.PacketRecive:
+                    FilePacketRecived(packet);
+                    break;
+            }
+        }
+
+        private void FilePacketRecived(NetworkPacket packet)
+        {
+
+            var id = packet[0];
+            bool done = (packet[1] & 0x80) > 0;
+            lock (_recivedFiles)
+            {
+                if (_recivedFiles.ContainsKey(id))
+                {
+                    _recivedFiles[id].Add(packet);
+                    if (done)
+                    {
+
+                        var fi = _recivedFiles[id];
+                        _recivedFiles.Remove(id);
+
+                        FileReciveDone(fi);
+                    }
+                }
+            }
+        }
+
+        private void FileReciveDone(ReciveFile recivedFile)
+        {
+            byte[] file = new byte[recivedFile.Size];
+            int startIndex = 0; 
+            int session = 0;
+            
+            while (true)
+            {
+                var p = recivedFile.Packets.FirstOrDefault((o) => (o[1] & 0x7F) == session);
+                NetworkPacket.Copy(file, startIndex, p, 2, p.PayloadLength - 2);
+                startIndex += p.PayloadLength - 2;
+                session++; 
+                if((p[1] & 0x80)>0)
+                    break;
+            }
+            
+            using (var fileinfo = CreateOrOpenFile<BaseFile>(recivedFile.Name))
+            {
+                fileinfo.Data = file; 
+            }
+        }
+
+        public void RequestFile(string name)
+        {
+            NetworkRequest rq = NetworkRequest.CreateSignal(1 + name.Length, PacketType.Tcp);
+            lock (_recivedFiles)
+            {
+                byte i = 0;
+                for (; i < 0xFF; i++)
+                {
+                    if (!_recivedFiles.ContainsKey(i))
+                        break;
+                }
+
+                _recivedFiles.Add(i, new ReciveFile() {Name = name});
+                rq.Packet[0] = i;
+                for (int z = 0; z < name.Length; z++)
+                {
+                    rq.Packet[1 + z] = (byte) name[z];
+                }
+            }
+            EventBus.Publich(rq);
+        }
+
+        private void InfoPacketRecived(NetworkPacket packet)
+        {
+            var id = packet[0];
+            var len = packet.PayloadLength - 1;
+            StringBuilder sb = new StringBuilder(len);
+            for (int i = 1; i < len; i++)
+            {
+                sb.Append((char) packet[i]);
+            }
+            string name = sb.ToString();
+            SendFile(id, name, packet.Address); 
+        }
+
+        private void SendFile(byte id, string name, IPEndPoint iPEndPoint)
+        {
+            BaseFile file = GetFile<BaseFile>(name);
+            if (file != null)
+            {
+                var data = file.Data;
+                int size = 0;
+                int session = 0;
+                bool done = false;
+
+                while (size < data.Length)
+                {
+                    int packetLength = (data.Length - size) > 1000 ? 1000 : data.Length - size;
+                    if (size + packetLength == data.Length)
+                        done = true;
+
+                    NetworkRequest rq = NetworkRequest.CreateSignal(packetLength+2, PacketType.Tcp);
+                    NetworkPacket.Copy(rq.Packet, 2, data, size, packetLength);
+
+                    rq.Packet[0] = id;
+                    rq.Packet[1] = (byte)((session++) | (done ? 0x80 : 0x00));
+
+                    EventBus.Publich(rq);
+
+                    size += packetLength;
+                }
+            }
+        }
+
+        #endregion
+
+
+        private class ReciveFile
+        {
+            public string Name { get; set; }
+
+            public int Size { get; private set; }
+
+            public List<NetworkPacket> Packets = new List<NetworkPacket>();
+
+            public void Add(NetworkPacket packet)
+            {
+                Size += packet.PayloadLength-2;
+                Packets.Add(packet);
+            }
+
+        }
+
+
     }
 }

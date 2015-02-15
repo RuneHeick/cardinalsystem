@@ -17,7 +17,7 @@ namespace MulticastTestApp
         {
 
             NIC network = new NIC(new IPEndPoint(IPAddress.Any, 5050));
-            SharedFileManager fileManager = new SharedFileManager("Folder", IPAddress.Any);
+            SharedFileManager fileManager = new SharedFileManager("Folder", new IPEndPoint(IPAddress.Any, 5050));
             int known = 0;
 
             while (true)
