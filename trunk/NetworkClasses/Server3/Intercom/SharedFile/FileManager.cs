@@ -48,8 +48,6 @@ namespace Server3.Intercom.SharedFile
             {
                 _knownFileManagers.Add(_me.Address, localFileManager);
             }
-
-
         }
 
         private void NewClientFount(ClientFoundEvent client)
@@ -118,6 +116,7 @@ namespace Server3.Intercom.SharedFile
         private readonly DirectoryInfo _folder;
         private readonly Dictionary<string, BaseFile> _openFiles = new Dictionary<string, BaseFile>();
 
+        private byte _fileReciveSession = 0; 
         private readonly Dictionary<byte, ReciveFile> _recivedFiles = new Dictionary<byte, ReciveFile>(); 
 
         public LocalFileManager(IPEndPoint address, DirectoryInfo folder)
@@ -294,8 +293,8 @@ namespace Server3.Intercom.SharedFile
                     _recivedFiles[id].Add(packet);
                     if (done)
                     {
-
                         var fi = _recivedFiles[id];
+                        fi.MaxWaitTimeout.Calcel();
                         _recivedFiles.Remove(id);
 
                         FileReciveDone(fi);
@@ -327,20 +326,27 @@ namespace Server3.Intercom.SharedFile
             }
         }
 
-        public void RequestFile(string name)
+        public void RequestFile(string name, byte retransmit = 0)
         {
             NetworkRequest rq = NetworkRequest.CreateSignal(1 + name.Length, PacketType.Tcp);
             lock (_recivedFiles)
             {
-                byte i = 0;
-                for (; i < 0xFF; i++)
+                byte i = _fileReciveSession;
+                for (; i != _fileReciveSession - 1; i = (byte)((i+1) %0xFF))
                 {
                     if (!_recivedFiles.ContainsKey(i))
+                    {
+                        _fileReciveSession = i; 
                         break;
+                    }
+                       
                 }
                 rq.Packet.Address = _address;
                 rq.Packet.Command = (byte)InterComCommands.PacketInfo;
-                _recivedFiles.Add(i, new ReciveFile() {Name = name});
+                ReciveFile rfile = new ReciveFile() {Name = name, Session = i, Retransmit = retransmit};
+                rfile.MaxWaitTimeout = TimeOut.Create(2000, rfile, FileRequestTimeOut);
+                
+                _recivedFiles.Add(i, rfile);
                 rq.Packet[0] = i;
                 for (int z = 0; z < name.Length; z++)
                 {
@@ -348,6 +354,22 @@ namespace Server3.Intercom.SharedFile
                 }
             }
             EventBus.Publich(rq);
+        }
+
+        private void FileRequestTimeOut(ReciveFile obj)
+        {
+            lock (_recivedFiles)
+            {
+                if (_recivedFiles.ContainsKey(obj.Session))
+                {
+                    _recivedFiles.Remove(obj.Session);
+
+                    if (obj.Retransmit < 2)
+                    {
+                        RequestFile(obj.Name, obj.Retransmit++);
+                    }
+                }
+            }
         }
 
         private void InfoPacketRecived(NetworkPacket packet)
@@ -399,9 +421,15 @@ namespace Server3.Intercom.SharedFile
         {
             public string Name { get; set; }
 
+            public byte Session { get; set; }
+
+            public byte Retransmit { get; set; }
+
             public int Size { get; private set; }
 
             public List<NetworkPacket> Packets = new List<NetworkPacket>();
+
+            public TimeOut MaxWaitTimeout { get; set; }
 
             public void Add(NetworkPacket packet)
             {
