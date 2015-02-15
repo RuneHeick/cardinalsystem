@@ -128,6 +128,8 @@ namespace Server3.Intercom.SharedFile
             _folder = folder;
         }
 
+        #region Setup
+
         public void Setup()
         {
             EventBus.Subscribe<NetworkPacket>(NetworkPacketRecived, (p) => p.Address.Address.Equals(_address.Address));
@@ -143,6 +145,8 @@ namespace Server3.Intercom.SharedFile
             filecontainor.Dispose();
             EventBus.Subscribe<NetworkPacket>(NetworkPacketRecived, (p) => p.Command == (byte)InterComCommands.PacketInfo);
         }
+
+        #endregion
 
         #region FileSystem
 
@@ -303,6 +307,7 @@ namespace Server3.Intercom.SharedFile
 
         private void FileReciveDone(ReciveFile recivedFile)
         {
+            Console.WriteLine("File recived from "+_address.Address);
             byte[] file = new byte[recivedFile.Size];
             int startIndex = 0; 
             int session = 0;
