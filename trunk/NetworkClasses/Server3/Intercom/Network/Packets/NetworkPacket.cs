@@ -87,7 +87,7 @@ namespace Server3.Intercom.Network.Packets
 
         internal static int GetPacketLength(byte[] packetPart)
         {
-            return packetPart[2] + ((packetPart[1] << 8) & 0x07); 
+            return packetPart[2] + ((packetPart[1] & 0x07) << 8); 
         }
 
         internal byte[] Packet
