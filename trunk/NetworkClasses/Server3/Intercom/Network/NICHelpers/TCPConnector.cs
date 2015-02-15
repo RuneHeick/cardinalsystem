@@ -155,7 +155,8 @@ namespace Server3.Intercom.Network.NICHelpers
             try
             {
                 int len = info.Client.GetStream().EndRead(ar);
-                if (len == info.PacketBuffer.Length)
+                info.ReadIndex += len;
+                if (len > 0)
                 {
                     var infoBuffer = info.InfoBuffer;
                     var packetBuffer = info.PacketBuffer;
@@ -164,15 +165,22 @@ namespace Server3.Intercom.Network.NICHelpers
                     info.LastTouch = RecivedTime;
                     info.BufferReset();
 
-                    StartRead(info); //Start Reading before using thread to handle Packet. 
-
-                    NetworkPacket recivedPacket = new NetworkPacket(infoBuffer, packetBuffer, this, PacketType.Tcp)
+                    if (info.ReadIndex == info.PacketBuffer.Length)
                     {
-                        TimeStamp = RecivedTime, 
-                        Address = info.Client.Client.RemoteEndPoint as IPEndPoint
-                    };
+                        StartRead(info); //Start Reading before using thread to handle Packet. 
 
-                    PacketRecived(recivedPacket);
+                        NetworkPacket recivedPacket = new NetworkPacket(infoBuffer, packetBuffer, this, PacketType.Tcp)
+                        {
+                            TimeStamp = RecivedTime,
+                            Address = info.Client.Client.RemoteEndPoint as IPEndPoint
+                        };
+
+                        PacketRecived(recivedPacket);
+                    }
+                    else
+                    {
+                        info.Client.GetStream().BeginRead(info.PacketBuffer, info.ReadIndex, info.PacketBuffer.Length-info.ReadIndex, AsyncPacketReadComplete, info);
+                    }
                 }
                 else
                 {
@@ -270,11 +278,14 @@ namespace Server3.Intercom.Network.NICHelpers
         {
             public ClientInfo()
             {
+                ReadIndex = 0; 
                 ToSend = new List<NetworkPacket>();
                 BufferReset();
             }
 
             public IPAddress Address { get; set; }
+
+            public int ReadIndex { get; set; }
 
             public byte[] InfoBuffer { get; set; }
 
