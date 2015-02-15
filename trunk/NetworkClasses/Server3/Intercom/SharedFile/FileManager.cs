@@ -363,11 +363,19 @@ namespace Server3.Intercom.SharedFile
             while (true)
             {
                 var p = recivedFile.Packets.FirstOrDefault((o) => (o[1] & 0x7F) == session);
-                NetworkPacket.Copy(file, startIndex, p, 2, p.PayloadLength - 2);
-                startIndex += p.PayloadLength - 2;
-                session++;
-                if ((p[1] & 0x80) > 0)
-                    break;
+                if (p != null)
+                {
+                    NetworkPacket.Copy(file, startIndex, p, 2, p.PayloadLength - 2);
+                    startIndex += p.PayloadLength - 2;
+                    session++;
+                    if ((p[1] & 0x80) > 0)
+                        break;
+                }
+                else
+                {
+                    Console.WriteLine("File cannot be assembled");
+                    return;
+                }
             }
 
             BaseFile fileinfo;
