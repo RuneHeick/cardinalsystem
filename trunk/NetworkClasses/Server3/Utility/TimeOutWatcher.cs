@@ -42,9 +42,10 @@ namespace Server.InterCom
                     var item = list[0] as TimeOut;
                     lock (item.Lock)
                     {
-                        var Tick_WaitTime = (item.TimeoutEndTime - DateTime.Now.Ticks) / TimeSpan.TicksPerMillisecond;
+                        var Tick_WaitTime = (item.TimeoutEndTime - DateTime.Now.Ticks)/TimeSpan.TicksPerMillisecond;
                         if (Tick_WaitTime < 0)
                             Tick_WaitTime = 0;
+
                         timer.Change(Tick_WaitTime, Timeout.Infinite);
                     }
                 }
@@ -72,12 +73,10 @@ namespace Server.InterCom
                             if (item.TimeoutAction != null)
                              Task.Factory.StartNew((() => 
                              {
-                                 lock (item.Lock)
-                                 {
-                                     if (item.TimeoutAction != null)
+                                 if (item.TimeoutAction != null)
                                         item.TimeoutAction();
-                                     item.TimeoutAction = null;
-                                 }
+                                 item.TimeoutAction = null;
+                                 
                              }));
                         }
                         else
@@ -148,7 +147,7 @@ namespace Server.InterCom
                 if (list.Remove(this))
                     CalibrateTick();
             }
-            lock(this.Lock)
+            lock(Lock)
                 TimeoutAction = null; 
         }
 
