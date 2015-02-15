@@ -407,7 +407,7 @@ namespace Server3.Intercom.SharedFile
                 {
                     if (!_recivedFiles.ContainsKey(i))
                     {
-                        _fileReciveSession = i;
+                        _fileReciveSession = (byte)(i+1);
                         break;
                     }
 
