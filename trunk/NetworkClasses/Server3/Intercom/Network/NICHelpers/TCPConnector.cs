@@ -73,7 +73,10 @@ namespace Server3.Intercom.Network.NICHelpers
                     StartConnect(packet);
                 else if (connection.Client.Connected && connection.IsConnecting)
                 {
-                    connection.ToSend.Add(packet);
+                    lock (connection)
+                    {
+                        connection.ToSend.Add(packet);
+                    }
                 }
                 else if (connection.Client.Connected && connection.IsConnecting == false)
                     StartSendReqest(connection, packet);
@@ -90,7 +93,8 @@ namespace Server3.Intercom.Network.NICHelpers
                 if (connection == null)
                 {
                     ClientInfo info = AddClient(new TcpClient(), packet.Address.Address, true);
-                    info.ToSend.Add(packet);
+                    lock(info)
+                        info.ToSend.Add(packet);
                     info.Client.BeginConnect(packet.Address.Address, packet.Address.Port, AsyncConnectionComplete, info);
                 }
             }
@@ -111,12 +115,15 @@ namespace Server3.Intercom.Network.NICHelpers
                 {
                     CloseClientInfo(info);
                 }
-            
-                foreach (var packet in info.ToSend)
+
+                lock (info)
                 {
-                    StartSendReqest(info,packet);
+                    foreach (var packet in info.ToSend)
+                    {
+                        StartSendReqest(info, packet);
+                    }
+                    info.ToSend.Clear();
                 }
-                info.ToSend.Clear();
             }
         }
 

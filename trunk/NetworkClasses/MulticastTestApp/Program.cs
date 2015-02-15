@@ -22,7 +22,7 @@ namespace MulticastTestApp
             if(temp.Exists)
                 temp.Delete(true);
 
-            var address = new IPEndPoint(IPAddress.Parse("192.168.87.103"), 5050);
+            var address = new IPEndPoint(IPAddress.Parse("192.168.87.101"), 5050);
             
             NIC network = new NIC(address);
             SharedFileManager fileManager = new SharedFileManager("Folder", address);
@@ -42,8 +42,9 @@ namespace MulticastTestApp
 
                 using (var file = fileManager.GetFile<BaseFile>("BigFile", address.Address, true))
                 {
-                    file.Data = new byte[80000];
+                    file.Data = new byte[100000];
                     file.Data[0] = (byte)(DateTime.Now.Ticks%255);
+                    Console.WriteLine("Big " + file.Data[0]);
                 }
                 
 
