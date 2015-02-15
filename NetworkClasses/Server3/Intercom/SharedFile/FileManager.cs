@@ -42,7 +42,7 @@ namespace Server3.Intercom.SharedFile
             }
 
             LocalFileManager localFileManager = new LocalFileManager(_me, subDir);
-            localFileManager.GetFile<SystemFileIndexFile>("FileInfo", true).Dispose(); 
+            localFileManager.SetupLocal();
             lock (_knownFileManagers)
             {
                 _knownFileManagers.Add(_me.Address, localFileManager);
@@ -127,8 +127,6 @@ namespace Server3.Intercom.SharedFile
         {
             _address = address;
             _folder = folder;
-            NetworkSetup();
-            
         }
 
         private void FolderSetup()
@@ -140,9 +138,15 @@ namespace Server3.Intercom.SharedFile
 
         public void Setup()
         {
-            FolderSetup(); 
+            
         }
 
+        public void SetupLocal()
+        {
+            var filecontainor = GetFile<SystemFileIndexFile>("FileInfo", true);
+            filecontainor.Dispose();
+            EventBus.Subscribe<NetworkPacket>(NetworkPacketRecived, (p) => p.Command == (byte)InterComCommands.PacketInfo);
+        }
 
         #region FileSystem
 
@@ -268,7 +272,7 @@ namespace Server3.Intercom.SharedFile
 
         private void NetworkSetup()
         {
-            EventBus.Subscribe<NetworkPacket>(NetworkPacketRecived, (p)=>p.Address.Address.Equals(_address.Address));
+            EventBus.Subscribe<NetworkPacket>(NetworkPacketRecived, (p) => p.Address.Address.Equals(_address.Address));
         }
 
         private void NetworkPacketRecived(NetworkPacket packet)
@@ -356,7 +360,7 @@ namespace Server3.Intercom.SharedFile
             var id = packet[0];
             var len = packet.PayloadLength - 1;
             StringBuilder sb = new StringBuilder(len);
-            for (int i = 1; i < len; i++)
+            for (int i = 1; i < len+1; i++)
             {
                 sb.Append((char) packet[i]);
             }
@@ -413,5 +417,6 @@ namespace Server3.Intercom.SharedFile
         }
 
 
+       
     }
 }
