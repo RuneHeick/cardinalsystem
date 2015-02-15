@@ -446,32 +446,49 @@ namespace Server3.Intercom.SharedFile
 
         private void SendFile(byte id, string name, IPEndPoint iPEndPoint)
         {
-            lock(_openFiles)
+            FileInfo file = new FileInfo(_folder.FullName + "/" + name);
+            try
             {
-                if (File.Exists(_folder.FullName + "/" + name))
+                lock (_openFiles)
                 {
-                    var data = File.ReadAllBytes(_folder.FullName+"/"+name);
-                    int size = 0;
-                    int session = 0;
-                    bool done = false;
-                    Console.WriteLine("File Sendt To: " + iPEndPoint.Address);
-                    while (size < data.Length)
+                    if (file.Exists)
                     {
-                        int packetLength = (data.Length - size) > 1000 ? 1000 : data.Length - size;
-                        if (size + packetLength == data.Length)
-                            done = true;
 
-                        NetworkRequest rq = NetworkRequest.CreateSignal(packetLength + 2, PacketType.Tcp);
-                        NetworkPacket.Copy(rq.Packet, 2, data, size, packetLength);
-                        rq.Packet.Address = iPEndPoint;
-                        rq.Packet[0] = id;
-                        rq.Packet[1] = (byte) ((session++) | (done ? 0x80 : 0x00));
-                        rq.Packet.Command = (byte) InterComCommands.PacketRecive;
-                        EventBus.Publich(rq);
+                        byte[] data;
+                        using (FileStream r = file.OpenRead())
+                        {
+                            long length = file.Length - Crc32.HashSize;
+                            data = new byte[length];
+                            r.Read(data, 0, (int) length);
+                            r.Close();
+                        }
 
-                        size += packetLength;
+                        int size = 0;
+                        int session = 0;
+                        bool done = false;
+                        Console.WriteLine("File Sendt To: " + iPEndPoint.Address);
+                        while (size < data.Length)
+                        {
+                            int packetLength = (data.Length - size) > 1000 ? 1000 : data.Length - size;
+                            if (size + packetLength == data.Length)
+                                done = true;
+
+                            NetworkRequest rq = NetworkRequest.CreateSignal(packetLength + 2, PacketType.Tcp);
+                            NetworkPacket.Copy(rq.Packet, 2, data, size, packetLength);
+                            rq.Packet.Address = iPEndPoint;
+                            rq.Packet[0] = id;
+                            rq.Packet[1] = (byte) ((session++) | (done ? 0x80 : 0x00));
+                            rq.Packet.Command = (byte) InterComCommands.PacketRecive;
+                            EventBus.Publich(rq);
+
+                            size += packetLength;
+                        }
                     }
                 }
+            }
+            catch (Exception)
+            {
+                // ignored
             }
         }
 
