@@ -63,9 +63,7 @@ namespace Server3.Intercom.SharedFile
                 {
                     LocalFileManager localFileManager = new LocalFileManager(client.Address, folder);
                     _knownFileManagers.Add(client.Address.Address, localFileManager);
-                    TimeOut.Create<object>(1000, null, (o) => localFileManager.Setup());
-
-
+                    localFileManager.Setup();
                 }
             }
         }
