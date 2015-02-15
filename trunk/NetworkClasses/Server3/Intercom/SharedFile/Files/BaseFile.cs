@@ -14,7 +14,7 @@ namespace Server3.Intercom.SharedFile
         public virtual byte[] Data { get; set; }
         public string Name { get; internal set; }
 
-        public byte[] Hash { get; internal set;  }
+        public UInt32 Hash { get; internal set;  }
 
         public void Dispose()
         {

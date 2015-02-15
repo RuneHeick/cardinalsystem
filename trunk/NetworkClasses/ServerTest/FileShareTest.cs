@@ -67,7 +67,7 @@ namespace ServerTest
                 file.AddFileInfo("Test", 2000);
             }
 
-            byte[] hash1;
+            UInt32 hash1;
             using (SystemFileIndexFile file = manager.GetFile<SystemFileIndexFile>("BaseFile", IPAddress.Loopback, true))
             {
                 hash1 = file.Hash;
@@ -75,9 +75,9 @@ namespace ServerTest
                     Assert.Fail("content wrong");
             }
 
-            byte[] hash2 = manager.GetHash("BaseFile", IPAddress.Loopback);
+            UInt32 hash2 = manager.GetHash("BaseFile", IPAddress.Loopback);
 
-            if(!ArraysEqual(hash1,hash2))
+            if(hash1 != hash2)
                 Assert.Fail("Hash Wrong");
         }
 

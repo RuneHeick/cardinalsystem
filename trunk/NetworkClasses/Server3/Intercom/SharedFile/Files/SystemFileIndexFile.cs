@@ -11,8 +11,7 @@ namespace Server3.Intercom.SharedFile.Files
     public class SystemFileIndexFile:BaseFile
     {
 
-        List<SystemFileInfo> systemFileInfosfileInfos = new List<SystemFileInfo>();
-
+        public List<SystemFileInfo> filesInformation = new List<SystemFileInfo>();
 
         public override byte[] Data
         {
@@ -22,9 +21,9 @@ namespace Server3.Intercom.SharedFile.Files
 
         public void AddFileInfo(string name, UInt32 hash)
         {
-            lock (systemFileInfosfileInfos)
+            lock (filesInformation)
             {
-                SystemFileInfo info = systemFileInfosfileInfos.FirstOrDefault((o) => o.Name == name);
+                SystemFileInfo info = filesInformation.FirstOrDefault((o) => o.Name == name);
                 if (info == null)
                 {
                     info = new SystemFileInfo()
@@ -32,7 +31,7 @@ namespace Server3.Intercom.SharedFile.Files
                         Name = name,
                         Hash = hash
                     };
-                    systemFileInfosfileInfos.Add(info);
+                    filesInformation.Add(info);
                 }
                 else
                 {
@@ -43,9 +42,9 @@ namespace Server3.Intercom.SharedFile.Files
 
         public UInt32 GetHash(string name)
         {
-            lock (systemFileInfosfileInfos)
+            lock (filesInformation)
             {
-                SystemFileInfo info = systemFileInfosfileInfos.FirstOrDefault((o) => o.Name == name);
+                SystemFileInfo info = filesInformation.FirstOrDefault((o) => o.Name == name);
                 if (info != null)
                     return info.Hash;
                 else
@@ -55,7 +54,7 @@ namespace Server3.Intercom.SharedFile.Files
 
         private void FromByte(byte[] value)
         {
-            lock (systemFileInfosfileInfos)
+            lock (filesInformation)
             {
                 int startIndex = 0;
                 int i = 0;
@@ -71,7 +70,7 @@ namespace Server3.Intercom.SharedFile.Files
                         Hash = hash
                     };
 
-                    systemFileInfosfileInfos.Add(info);
+                    filesInformation.Add(info);
 
                     i += 5;
                     startIndex = i;
@@ -82,9 +81,9 @@ namespace Server3.Intercom.SharedFile.Files
         private byte[] ToByte()
         {
             List<byte> ret = new List<byte>(); 
-            lock (systemFileInfosfileInfos)
+            lock (filesInformation)
             {
-                foreach (SystemFileInfo info in  systemFileInfosfileInfos)
+                foreach (SystemFileInfo info in  filesInformation)
                 {
                     byte[] name = UTF8Encoding.UTF8.GetBytes(info.Name);
                     ret.AddRange(name);

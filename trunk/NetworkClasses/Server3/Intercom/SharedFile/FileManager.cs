@@ -87,7 +87,7 @@ namespace Server3.Intercom.SharedFile
             return null; 
         }
 
-        public byte[] GetHash(string name, IPAddress address)
+        public UInt32 GetHash(string name, IPAddress address)
         {
             LocalFileManager manager = null;
             lock (_knownFileManagers)
@@ -101,7 +101,7 @@ namespace Server3.Intercom.SharedFile
                 return manager.GetHash(name);
             }
 
-            return null;
+            return 0;
         } 
 
         #endregion
@@ -117,7 +117,9 @@ namespace Server3.Intercom.SharedFile
         private readonly Dictionary<string, BaseFile> _openFiles = new Dictionary<string, BaseFile>();
 
         private byte _fileReciveSession = 0; 
-        private readonly Dictionary<byte, ReciveFile> _recivedFiles = new Dictionary<byte, ReciveFile>(); 
+        private readonly Dictionary<byte, ReciveFile> _recivedFiles = new Dictionary<byte, ReciveFile>();
+
+        private const string InfoFileName = "FileInfo";
 
         public LocalFileManager(IPEndPoint address, DirectoryInfo folder)
         {
@@ -130,15 +132,25 @@ namespace Server3.Intercom.SharedFile
         public void Setup()
         {
             EventBus.Subscribe<NetworkPacket>(NetworkPacketRecived, (p) => p.Address.Address.Equals(_address.Address) && p.Command == (byte)InterComCommands.PacketRecive);
-            var filecontainor = GetFile<SystemFileIndexFile>("FileInfo");
+            var filecontainor = GetFile<SystemFileIndexFile>(InfoFileName);
             if (filecontainor == null)
-                RequestFile("FileInfo");
+                RequestFile(InfoFileName);
         }
 
         public void SetupLocal()
         {
-            var filecontainor = GetFile<SystemFileIndexFile>("FileInfo", true);
-            filecontainor.AddFileInfo("Test",52200);
+            var filecontainor = GetFile<SystemFileIndexFile>(InfoFileName, true);
+            FileInfo[] files = _folder.GetFiles();
+
+            foreach (var file in files)
+            {
+                if (file.Name != InfoFileName)
+                {
+                    var hash = GetHash(file.Name);
+                    filecontainor.AddFileInfo(file.Name, hash);
+                }
+            }
+
             filecontainor.Dispose();
             EventBus.Subscribe<NetworkPacket>(NetworkPacketRecived, (p) => p.Command == (byte)InterComCommands.PacketInfo);
         }
@@ -169,7 +181,7 @@ namespace Server3.Intercom.SharedFile
             return File.Exists(_folder.FullName + "/" + name); 
         }
 
-        public byte[] GetHash(string name)
+        public UInt32 GetHash(string name)
         {
             lock (_openFiles)
             {
@@ -185,10 +197,10 @@ namespace Server3.Intercom.SharedFile
                     byte[] hash = new byte[Crc32.HashSize];
                     r.Read(hash, 0, Crc32.HashSize);
                     r.Close();
-                    return hash;
+                    return BitConverter.ToUInt32(hash,0);
                 }
             }
-            return null;
+            return 0;
         }
 
         private T CreateOrOpenFile<T>(string name) where T : BaseFile, new()
@@ -214,7 +226,7 @@ namespace Server3.Intercom.SharedFile
                             {
                                 Data = data,
                                 Name = name,
-                                Hash = hash,
+                                Hash = BitConverter.ToUInt32(hash,0),
                                 CloseAction = SaveFile
                             };
 
@@ -248,7 +260,7 @@ namespace Server3.Intercom.SharedFile
 
                 try
                 {
-                    byte[] hashbyte = Crc32.UInt32ToBigEndianBytes(Crc32.CalculateHash(file.Data));
+                    byte[] hashbyte = BitConverter.GetBytes(Crc32.CalculateHash(file.Data));
                     using (FileStream w = File.OpenWrite(_folder.FullName+"/" + file.Name))
                     {
                         w.Write(file.Data, 0, file.Data.Length);
@@ -259,6 +271,13 @@ namespace Server3.Intercom.SharedFile
                 catch
                 {
                     // ignored
+                }
+
+                var filecontainor = GetFile<SystemFileIndexFile>(InfoFileName);
+                if (filecontainor != null)
+                {
+                    filecontainor.AddFileInfo(file.Name, file.Hash);
+                    filecontainor.Dispose();
                 }
             }
         }
@@ -318,12 +337,23 @@ namespace Server3.Intercom.SharedFile
                 if((p[1] & 0x80)>0)
                     break;
             }
-            
-            using (var fileinfo = CreateOrOpenFile<BaseFile>(recivedFile.Name))
+
+            BaseFile fileinfo;
+            using (fileinfo = CreateOrOpenFile<BaseFile>(recivedFile.Name))
             {
                 fileinfo.Data = file; 
             }
+
+            if (fileinfo.Name == InfoFileName)
+                FileDescriptionRecived(new SystemFileIndexFile()
+                {
+                    Data = fileinfo.Data,
+                    Hash = fileinfo.Hash,
+                    Name = fileinfo.Name
+                });
+
         }
+
 
         public void RequestFile(string name, byte retransmit = 0)
         {
@@ -363,9 +393,9 @@ namespace Server3.Intercom.SharedFile
                 {
                     _recivedFiles.Remove(obj.Session);
 
-                    if (obj.Retransmit < 2)
+                    if (obj.Retransmit < 3)
                     {
-                        RequestFile(obj.Name, obj.Retransmit++);
+                        RequestFile(obj.Name, ++obj.Retransmit);
                     }
                 }
             }
@@ -413,9 +443,6 @@ namespace Server3.Intercom.SharedFile
             }
         }
 
-        #endregion
-
-
         private class ReciveFile
         {
             public string Name { get; set; }
@@ -438,7 +465,25 @@ namespace Server3.Intercom.SharedFile
 
         }
 
+        #endregion
 
-       
+        #region FileDescriptionRecived
+
+
+
+        private void FileDescriptionRecived(SystemFileIndexFile systemFileIndexFile)
+        {
+            foreach (var info in systemFileIndexFile.filesInformation)
+            {
+                if ((!Exists(info.Name)) || GetHash(info.Name) != info.Hash)
+                {
+                    RequestFile(info.Name); 
+                }
+            }
+        }
+
+
+        #endregion
+
     }
 }
