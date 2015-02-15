@@ -273,11 +273,14 @@ namespace Server3.Intercom.SharedFile
                     // ignored
                 }
 
-                var filecontainor = GetFile<SystemFileIndexFile>(InfoFileName);
-                if (filecontainor != null)
+                if (InfoFileName != file.Name)
                 {
-                    filecontainor.AddFileInfo(file.Name, file.Hash);
-                    filecontainor.Dispose();
+                    var filecontainor = GetFile<SystemFileIndexFile>(InfoFileName);
+                    if (filecontainor != null)
+                    {
+                        filecontainor.AddFileInfo(file.Name, file.Hash);
+                        filecontainor.Dispose();
+                    }
                 }
             }
         }
