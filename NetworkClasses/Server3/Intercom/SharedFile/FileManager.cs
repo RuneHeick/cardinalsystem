@@ -42,7 +42,7 @@ namespace Server3.Intercom.SharedFile
             }
 
             LocalFileManager localFileManager = new LocalFileManager(_me, subDir);
-            localFileManager.GetFile<SystemFileIndexFile>("FileInfo", true); 
+            localFileManager.GetFile<SystemFileIndexFile>("FileInfo", true).Dispose(); 
             lock (_knownFileManagers)
             {
                 _knownFileManagers.Add(_me.Address, localFileManager);
