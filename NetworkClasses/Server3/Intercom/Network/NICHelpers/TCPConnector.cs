@@ -312,6 +312,7 @@ namespace Server3.Intercom.Network.NICHelpers
 
             public void BufferReset()
             {
+                ReadIndex = 0; 
                 InfoBuffer = new byte[3];
                 PacketBuffer = null; 
             }
