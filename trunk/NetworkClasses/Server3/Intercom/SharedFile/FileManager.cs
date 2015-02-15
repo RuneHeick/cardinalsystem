@@ -235,7 +235,7 @@ namespace Server3.Intercom.SharedFile
                                 Name = name,
                                 Hash = BitConverter.ToUInt32(hash, 0),
                             };
-                            if (!isLocal)
+                            if (isLocal)
                                 file.CloseAction = SaveFile;
                             else
                                 file.CloseAction = CloseFile;

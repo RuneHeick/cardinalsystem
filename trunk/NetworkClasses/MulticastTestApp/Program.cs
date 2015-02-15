@@ -42,7 +42,7 @@ namespace MulticastTestApp
 
                 using (var file = fileManager.GetFile<BaseFile>("Test", address.Address, true))
                 {
-                    file.Data = new byte[12];
+                    file.Data = new byte[]{(byte)(DateTime.Now.Ticks%255)};
                 }
 
 
