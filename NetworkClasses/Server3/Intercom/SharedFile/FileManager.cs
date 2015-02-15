@@ -373,7 +373,7 @@ namespace Server3.Intercom.SharedFile
                 int size = 0;
                 int session = 0;
                 bool done = false;
-
+                Console.WriteLine("File Sendt To: " + iPEndPoint.Address);
                 while (size < data.Length)
                 {
                     int packetLength = (data.Length - size) > 1000 ? 1000 : data.Length - size;
