@@ -360,9 +360,11 @@ namespace Server3.Intercom.SharedFile
             int startIndex = 0;
             int session = 0;
 
+
+            NetworkPacket p;
             while (true)
             {
-                var p = recivedFile.Packets.FirstOrDefault((o) => (o[1] & 0x7F) == session);
+                p = recivedFile.Packets.FirstOrDefault((o) => (o[1] & 0x7F) == session);
                 if (p != null)
                 {
                     NetworkPacket.Copy(file, startIndex, p, 2, p.PayloadLength - 2);
@@ -489,7 +491,9 @@ namespace Server3.Intercom.SharedFile
                             rq.Packet[0] = id;
                             rq.Packet[1] = (byte) ((session++) | (done ? 0x80 : 0x00));
                             rq.Packet.Command = (byte) InterComCommands.PacketRecive;
+                            
                             EventBus.Publich(rq);
+                                
 
                             size += packetLength;
                         }
