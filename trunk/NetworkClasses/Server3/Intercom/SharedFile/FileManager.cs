@@ -494,7 +494,7 @@ namespace Server3.Intercom.SharedFile
                             rq.Packet[1] = (byte) ((session++) | (done ? 0x80 : 0x00));
                             rq.Packet.Command = (byte) InterComCommands.PacketRecive;
                             
-                            EventBus.Publich(rq);
+                            EventBus.Publich(rq, false);
                                 
 
                             size += packetLength;
