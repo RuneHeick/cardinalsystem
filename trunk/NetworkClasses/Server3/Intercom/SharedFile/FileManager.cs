@@ -107,11 +107,7 @@ namespace Server3.Intercom.SharedFile
 
         #endregion
 
-        #region FileUpdate
-
-
-
-        #endregion
+        
     }
 
 
