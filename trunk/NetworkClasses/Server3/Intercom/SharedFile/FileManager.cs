@@ -339,7 +339,7 @@ namespace Server3.Intercom.SharedFile
                     if (!_recivedFiles.ContainsKey(i))
                         break;
                 }
-
+                rq.Packet.Address = _address; 
                 _recivedFiles.Add(i, new ReciveFile() {Name = name});
                 rq.Packet[0] = i;
                 for (int z = 0; z < name.Length; z++)
