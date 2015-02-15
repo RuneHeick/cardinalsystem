@@ -301,7 +301,7 @@ namespace Server3.Intercom.SharedFile
                         filecontainor.Dispose();
                         if (_infoFileHash != filecontainor.Hash)
                         {
-                            SendMulticastUpdate();
+                            SendMulticastUpdate(filecontainor.Hash);
                             _infoFileHash = filecontainor.Hash;
                         }
                     }
