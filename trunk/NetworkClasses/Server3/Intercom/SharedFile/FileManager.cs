@@ -275,7 +275,6 @@ namespace Server3.Intercom.SharedFile
                     InfoPacketRecived(packet);
                     break;
                 case (byte)InterComCommands.PacketRecive:
-                    Console.WriteLine("Recive started from: "+packet.Address.Address);
                     FilePacketRecived(packet);
                     break;
             }
