@@ -125,16 +125,12 @@ namespace Server3.Intercom.SharedFile
             _folder = folder;
         }
 
-        private void FolderSetup()
-        {
-            var filecontainor = GetFile<SystemFileIndexFile>("FileInfo"); 
-            if(filecontainor == null)
-                RequestFile("FileInfo");
-        }
-
         public void Setup()
         {
             EventBus.Subscribe<NetworkPacket>(NetworkPacketRecived, (p) => p.Address.Address.Equals(_address.Address));
+            var filecontainor = GetFile<SystemFileIndexFile>("FileInfo");
+            if (filecontainor == null)
+                RequestFile("FileInfo");
         }
 
         public void SetupLocal()
