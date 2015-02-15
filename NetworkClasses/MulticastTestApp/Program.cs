@@ -16,7 +16,7 @@ namespace MulticastTestApp
         static void Main(string[] args)
         {
 
-            var address = new IPEndPoint(IPAddress.Parse("192.168.87.101"), 5050);
+            var address = new IPEndPoint(IPAddress.Parse("192.168.87.103"), 5050);
             SharedFileManager fileManager = new SharedFileManager("Folder", address);
             NIC network = new NIC(address);
             
