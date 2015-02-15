@@ -355,7 +355,7 @@ namespace Server3.Intercom.SharedFile
 
         private void FileReciveDone(ReciveFile recivedFile)
         {
-            Console.WriteLine("File "+recivedFile.Name+" recived from " + _address.Address);
+            
             byte[] file = new byte[recivedFile.Size];
             int startIndex = 0;
             int session = 0;
@@ -375,7 +375,7 @@ namespace Server3.Intercom.SharedFile
                 }
                 else
                 {
-                    Console.WriteLine("File cannot be assembled");
+                    Console.WriteLine("File: "+recivedFile.Name+" cannot be assembled");
                     return;
                 }
             }
@@ -385,6 +385,8 @@ namespace Server3.Intercom.SharedFile
             {
                 fileinfo.Data = file;
             }
+
+            Console.WriteLine("File " + recivedFile.Name + " recived from " + _address.Address);
 
             if (fileinfo.Name == InfoFileName)
                 FileDescriptionRecived(new SystemFileIndexFile()
