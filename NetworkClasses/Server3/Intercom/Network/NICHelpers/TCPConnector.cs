@@ -158,15 +158,15 @@ namespace Server3.Intercom.Network.NICHelpers
                 info.ReadIndex += len;
                 if (len > 0)
                 {
-                    var infoBuffer = info.InfoBuffer;
-                    var packetBuffer = info.PacketBuffer;
-                    var RecivedTime = DateTime.Now;
-
-                    info.LastTouch = RecivedTime;
-                    info.BufferReset();
-
                     if (info.ReadIndex == info.PacketBuffer.Length)
                     {
+                        var infoBuffer = info.InfoBuffer;
+                        var packetBuffer = info.PacketBuffer;
+                        var RecivedTime = DateTime.Now;
+
+                        info.LastTouch = RecivedTime;
+                        info.BufferReset();
+
                         StartRead(info); //Start Reading before using thread to handle Packet. 
 
                         NetworkPacket recivedPacket = new NetworkPacket(infoBuffer, packetBuffer, this, PacketType.Tcp)
