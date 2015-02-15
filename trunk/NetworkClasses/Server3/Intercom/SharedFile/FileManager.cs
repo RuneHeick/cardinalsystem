@@ -132,7 +132,7 @@ namespace Server3.Intercom.SharedFile
 
         public void Setup()
         {
-            EventBus.Subscribe<NetworkPacket>(NetworkPacketRecived, (p) => p.Address.Address.Equals(_address.Address));
+            EventBus.Subscribe<NetworkPacket>(NetworkPacketRecived, (p) => p.Address.Address.Equals(_address.Address) && p.Command == (byte)InterComCommands.PacketRecive);
             var filecontainor = GetFile<SystemFileIndexFile>("FileInfo");
             if (filecontainor == null)
                 RequestFile("FileInfo");
