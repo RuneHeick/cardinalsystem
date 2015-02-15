@@ -144,9 +144,11 @@ namespace Server3.Intercom.SharedFile
             EventBus.Subscribe<NetworkPacket>(MulticastUpdateRecived,
                 (p) => p.Address.Address.Equals(_address.Address) && p.Command == (byte)InterComCommands.PacketInfo && p.Type == PacketType.Multicast);
 
-            var filecontainor = GetFile<SystemFileIndexFile>(InfoFileName);
-            if (filecontainor == null)
-                RequestFile(InfoFileName);
+            using (var filecontainor = GetFile<SystemFileIndexFile>(InfoFileName))
+            {
+                if (filecontainor == null)
+                    RequestFile(InfoFileName);
+            }
         }
 
         public void SetupLocal()
@@ -444,29 +446,31 @@ namespace Server3.Intercom.SharedFile
 
         private void SendFile(byte id, string name, IPEndPoint iPEndPoint)
         {
-            BaseFile file = GetFile<BaseFile>(name);
-            if (file != null)
+            using (BaseFile file = GetFile<BaseFile>(name))
             {
-                var data = file.Data;
-                int size = 0;
-                int session = 0;
-                bool done = false;
-                Console.WriteLine("File Sendt To: " + iPEndPoint.Address);
-                while (size < data.Length)
+                if (file != null)
                 {
-                    int packetLength = (data.Length - size) > 1000 ? 1000 : data.Length - size;
-                    if (size + packetLength == data.Length)
-                        done = true;
+                    var data = file.Data;
+                    int size = 0;
+                    int session = 0;
+                    bool done = false;
+                    Console.WriteLine("File Sendt To: " + iPEndPoint.Address);
+                    while (size < data.Length)
+                    {
+                        int packetLength = (data.Length - size) > 1000 ? 1000 : data.Length - size;
+                        if (size + packetLength == data.Length)
+                            done = true;
 
-                    NetworkRequest rq = NetworkRequest.CreateSignal(packetLength + 2, PacketType.Tcp);
-                    NetworkPacket.Copy(rq.Packet, 2, data, size, packetLength);
-                    rq.Packet.Address = iPEndPoint;
-                    rq.Packet[0] = id;
-                    rq.Packet[1] = (byte) ((session++) | (done ? 0x80 : 0x00));
-                    rq.Packet.Command = (byte) InterComCommands.PacketRecive;
-                    EventBus.Publich(rq);
+                        NetworkRequest rq = NetworkRequest.CreateSignal(packetLength + 2, PacketType.Tcp);
+                        NetworkPacket.Copy(rq.Packet, 2, data, size, packetLength);
+                        rq.Packet.Address = iPEndPoint;
+                        rq.Packet[0] = id;
+                        rq.Packet[1] = (byte) ((session++) | (done ? 0x80 : 0x00));
+                        rq.Packet.Command = (byte) InterComCommands.PacketRecive;
+                        EventBus.Publich(rq);
 
-                    size += packetLength;
+                        size += packetLength;
+                    }
                 }
             }
         }
