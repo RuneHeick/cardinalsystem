@@ -136,6 +136,7 @@ namespace Server3.Intercom.SharedFile
         public void SetupLocal()
         {
             var filecontainor = GetFile<SystemFileIndexFile>("FileInfo", true);
+            filecontainor.AddFileInfo("Test",52200);
             filecontainor.Dispose();
             EventBus.Subscribe<NetworkPacket>(NetworkPacketRecived, (p) => p.Command == (byte)InterComCommands.PacketInfo);
         }
