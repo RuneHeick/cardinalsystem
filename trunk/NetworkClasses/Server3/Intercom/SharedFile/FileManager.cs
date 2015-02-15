@@ -446,11 +446,11 @@ namespace Server3.Intercom.SharedFile
 
         private void SendFile(byte id, string name, IPEndPoint iPEndPoint)
         {
-            using (BaseFile file = GetFile<BaseFile>(name))
+            lock(_openFiles)
             {
-                if (file != null)
+                if (File.Exists(_folder.FullName + "/" + name))
                 {
-                    var data = file.Data;
+                    var data = File.ReadAllBytes(_folder.FullName+"/"+name);
                     int size = 0;
                     int session = 0;
                     bool done = false;
