@@ -268,7 +268,7 @@ namespace Server3.Intercom.SharedFile
 
         private void NetworkSetup()
         {
-            EventBus.Subscribe<NetworkPacket>(NetworkPacketRecived, (p)=>p.Address.Address.Equals(_address));
+            EventBus.Subscribe<NetworkPacket>(NetworkPacketRecived, (p)=>p.Address.Address.Equals(_address.Address));
         }
 
         private void NetworkPacketRecived(NetworkPacket packet)
@@ -339,7 +339,8 @@ namespace Server3.Intercom.SharedFile
                     if (!_recivedFiles.ContainsKey(i))
                         break;
                 }
-                rq.Packet.Address = _address; 
+                rq.Packet.Address = _address;
+                rq.Packet.Command = (byte)InterComCommands.PacketInfo;
                 _recivedFiles.Add(i, new ReciveFile() {Name = name});
                 rq.Packet[0] = i;
                 for (int z = 0; z < name.Length; z++)
@@ -384,7 +385,7 @@ namespace Server3.Intercom.SharedFile
 
                     rq.Packet[0] = id;
                     rq.Packet[1] = (byte)((session++) | (done ? 0x80 : 0x00));
-
+                    rq.Packet.Command = (byte)InterComCommands.PacketRecive;
                     EventBus.Publich(rq);
 
                     size += packetLength;
