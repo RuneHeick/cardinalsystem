@@ -9,6 +9,7 @@ using System.Security.Policy;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Server.InterCom;
 using Server3.Intercom.Network;
 using Server3.Intercom.Network.Packets;
 using Server3.Intercom.SharedFile.Files;
@@ -62,7 +63,9 @@ namespace Server3.Intercom.SharedFile
                 {
                     LocalFileManager localFileManager = new LocalFileManager(client.Address, folder);
                     _knownFileManagers.Add(client.Address.Address, localFileManager);
-                    localFileManager.Setup();
+                    TimeOut.Create<object>(1000, null, (o) => localFileManager.Setup());
+
+
                 }
             }
         }
