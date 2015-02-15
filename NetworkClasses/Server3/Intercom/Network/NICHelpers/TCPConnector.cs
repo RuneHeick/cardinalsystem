@@ -201,9 +201,16 @@ namespace Server3.Intercom.Network.NICHelpers
 
         private void StartSendReqest(ClientInfo stream, NetworkPacket networkPacket)
         {
-            byte[] packet = networkPacket.Packet;
-            stream.Client.GetStream()
-                .BeginWrite(packet, 0, packet.Length, AsyncWriteComplete, stream);
+            try
+            {
+                byte[] packet = networkPacket.Packet;
+                stream.Client.GetStream()
+                    .BeginWrite(packet, 0, packet.Length, AsyncWriteComplete, stream);
+            }
+            catch (Exception e)
+            {
+                CloseClientInfo(stream);
+            }
         }
 
         private void AsyncWriteComplete(IAsyncResult ar)
@@ -214,7 +221,7 @@ namespace Server3.Intercom.Network.NICHelpers
                 info.Client.GetStream().EndWrite(ar);
                 info.LastTouch = DateTime.Now;
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 CloseClientInfo(info);
             }
