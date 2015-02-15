@@ -279,9 +279,11 @@ namespace Server3.Intercom.SharedFile
                 if (_openFiles.ContainsKey(file.Name))
                     _openFiles.Remove(file.Name);
 
+                UInt32 hash32 = 0;
                 try
                 {
-                    byte[] hashbyte = BitConverter.GetBytes(Crc32.CalculateHash(file.Data));
+                    hash32 = Crc32.CalculateHash(file.Data);
+                    byte[] hashbyte = BitConverter.GetBytes(hash32);
                     using (FileStream w = File.OpenWrite(_folder.FullName + "/" + file.Name))
                     {
                         w.Write(file.Data, 0, file.Data.Length);
@@ -299,7 +301,7 @@ namespace Server3.Intercom.SharedFile
                     var filecontainor = GetFile<SystemFileIndexFile>(InfoFileName);
                     if (filecontainor != null)
                     {
-                        filecontainor.AddFileInfo(file.Name, file.Hash);
+                        filecontainor.AddFileInfo(file.Name, hash32);
                         filecontainor.Dispose();
                         if (_infoFileHash != filecontainor.Hash)
                         {
