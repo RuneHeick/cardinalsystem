@@ -138,7 +138,7 @@ namespace Server3.Intercom.SharedFile
 
         public void Setup()
         {
-            
+            EventBus.Subscribe<NetworkPacket>(NetworkPacketRecived, (p) => p.Address.Address.Equals(_address.Address));
         }
 
         public void SetupLocal()
@@ -269,11 +269,6 @@ namespace Server3.Intercom.SharedFile
         #endregion
 
         #region Network 
-
-        private void NetworkSetup()
-        {
-            EventBus.Subscribe<NetworkPacket>(NetworkPacketRecived, (p) => p.Address.Address.Equals(_address.Address));
-        }
 
         private void NetworkPacketRecived(NetworkPacket packet)
         {
