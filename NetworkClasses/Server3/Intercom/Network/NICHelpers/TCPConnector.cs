@@ -179,7 +179,7 @@ namespace Server3.Intercom.Network.NICHelpers
                     CloseClientInfo(info);
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 CloseClientInfo(info);
             }
