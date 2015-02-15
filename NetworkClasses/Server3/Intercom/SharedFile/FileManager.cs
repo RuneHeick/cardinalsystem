@@ -353,7 +353,7 @@ namespace Server3.Intercom.SharedFile
 
         private void FileReciveDone(ReciveFile recivedFile)
         {
-            Console.WriteLine("File recived from " + _address.Address);
+            Console.WriteLine("File "+recivedFile.Name+" recived from " + _address.Address);
             byte[] file = new byte[recivedFile.Size];
             int startIndex = 0;
             int session = 0;
