@@ -374,7 +374,7 @@ namespace Server3.Intercom.SharedFile
 
                     NetworkRequest rq = NetworkRequest.CreateSignal(packetLength+2, PacketType.Tcp);
                     NetworkPacket.Copy(rq.Packet, 2, data, size, packetLength);
-
+                    rq.Packet.Address = iPEndPoint; 
                     rq.Packet[0] = id;
                     rq.Packet[1] = (byte)((session++) | (done ? 0x80 : 0x00));
                     rq.Packet.Command = (byte)InterComCommands.PacketRecive;
