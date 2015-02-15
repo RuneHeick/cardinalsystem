@@ -9,7 +9,8 @@ namespace Server3.Intercom
     enum InterComCommands
     {
         PortMessage = 0,
-
+        PacketInfo,
+        PacketRecive,
 
         Extend = 31
     }

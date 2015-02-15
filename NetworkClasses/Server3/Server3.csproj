@@ -58,6 +58,7 @@
     <Compile Include="Intercom\SharedFile\Files\SystemFileIndexFile.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utility\Crc.cs" />
+    <Compile Include="Utility\Crc32.cs" />
     <Compile Include="Utility\IPEqualityComparer.cs" />
     <Compile Include="Utility\IPRange.cs" />
     <Compile Include="Utility\MemberInfoGetting.cs" />

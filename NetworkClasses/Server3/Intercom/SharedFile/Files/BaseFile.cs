@@ -6,13 +6,15 @@ using System.Threading.Tasks;
 
 namespace Server3.Intercom.SharedFile
 {
-    public abstract class BaseFile:IDisposable
+    public class BaseFile:IDisposable
     {
         private readonly object _objectLock = new object();
         internal Action<BaseFile> CloseAction;
         
         public virtual byte[] Data { get; set; }
         public string Name { get; internal set; }
+
+        public byte[] Hash { get; internal set;  }
 
         public void Dispose()
         {
