@@ -6,12 +6,13 @@ using System.Net;
 using System.Net.Mail;
 using System.Net.Sockets;
 using Server.InterCom;
+using Server3.Intercom.Errors;
 using Server3.Intercom.Network.NICHelpers;
 using Server3.Intercom.Network.Packets;
 
 namespace Server3.Intercom.Network
 {
-    public class NIC
+    internal class NIC
     {
         //Public 
         public IPEndPoint Ip { get; set; }

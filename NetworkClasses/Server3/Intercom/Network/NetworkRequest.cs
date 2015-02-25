@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using Server3.Intercom.Errors;
 using Server3.Intercom.Network.NICHelpers;
 using Server3.Intercom.Network.Packets;
 
@@ -36,13 +37,5 @@ namespace Server3.Intercom.Network
 
         internal Action<NetworkPacket, ErrorType> ErrorCallbak { get; set; }
         
-    }
-
-    public enum ErrorType
-    {
-        TimeOut,
-        Connection,
-        RequestFull,
-        PacketFormat
     }
 }
