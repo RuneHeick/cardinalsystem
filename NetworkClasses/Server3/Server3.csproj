@@ -54,8 +54,10 @@
     <Compile Include="Intercom\Network\NICHelpers\UDPConnector.cs" />
     <Compile Include="Intercom\Network\Packets\NetworkSegmentedPacket.cs" />
     <Compile Include="Intercom\Network\Packets\NetworkShortPacket.cs" />
-    <Compile Include="Intercom\SharedFile\Files\BaseFile.cs" />
+    <Compile Include="Intercom\SharedFile2\FileCollection.cs" />
+    <Compile Include="Intercom\SharedFile2\FileManager.cs" />
     <Compile Include="Intercom\SharedFile\FileManager.cs" />
+    <Compile Include="Intercom\SharedFile\Files\BaseFile.cs" />
     <Compile Include="Intercom\SharedFile\Files\SystemFileIndexFile.cs" />
     <Compile Include="Intercom\SharedFile\FileRequest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
