@@ -18,8 +18,8 @@ namespace ServerTest
     public class NICTest
     {
 
-        public NIC NetworkInterface1;
-        public NIC NetworkInterface2; 
+        private NIC NetworkInterface1;
+        private NIC NetworkInterface2; 
 
         public NICTest()
         {

@@ -1,16 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Server3
 {
-    public static class EventBus
+    internal static class EventBus
     {
 
         private static IColletionItem[] _colletion = new IColletionItem[10];
+        private static Dictionary<Type,List<Action<Change, Type>>>  _subscribeNotifyers = new Dictionary<Type, List<Action<Change, Type>>>();
+
+        private static int _counter = 0;
+        private static readonly object CounterLock = new object();
 
         public static void Publich<T>(T item, bool threaded = true)
         {
@@ -22,29 +28,38 @@ namespace Server3
 
         private static void PublichWorker<T>(T item)
         {
+            lock (CounterLock)
+            {
+                _counter++;
+            }
+
             try
             {
-                Monitor.Enter(_colletion);
                 for (int i = 0; i < _colletion.Length; i++)
                 {
                     if (_colletion[i] != null && (_colletion[i].Type == typeof(T) || typeof(T).IsAssignableFrom(_colletion[i].Type)))
                     {
                         var cItem = (CollectionItem<T>) _colletion[i];
-                        Monitor.Exit(_colletion);
                         if (cItem.Condition == null || cItem.Condition(item))
                             cItem.Handler(item);
-                        Monitor.Enter(_colletion);
                     }
                 }
             }
-            finally
+            catch
             {
-                Monitor.Exit(_colletion); 
+                // ignored
+            }
+
+            lock (CounterLock)
+            {
+                _counter--;
+                Monitor.PulseAll(CounterLock);
             }
         }
 
         public static void Subscribe<T>(Action<T> handlerAction, Func<T, bool> condition = null)
         {
+
             CollectionItem<T> item = new CollectionItem<T>()
             {
                 Handler = handlerAction,
@@ -55,8 +70,14 @@ namespace Server3
 
         public static void UnSubscribe<T>(Action<T> handlerAction, Func<T, bool> condition = null)
         {
-            lock (_colletion)
+            lock (CounterLock)
             {
+
+                while (_counter > 0)
+                {
+                    Monitor.Wait(CounterLock);
+                }
+
                 for (int i = 0; i < _colletion.Length; i++)
                 {
                     if (_colletion[i] != null && _colletion[i].Type == typeof(T))
@@ -66,13 +87,73 @@ namespace Server3
                             _colletion[i] = null; 
                     }
                 }
+                if(_colletion.FirstOrDefault((o)=> o.Type == typeof(T)) == null)
+                    InvokeSubscribeNotifyer(Change.Removed, typeof(T));
+
             }
         }
 
+        public static void AddSubscribeNotifyer(Type type, Action<Change, Type> callback)
+        {
+            lock (_subscribeNotifyers)
+            {
+                if (!_subscribeNotifyers.ContainsKey(type))
+                    _subscribeNotifyers.Add(type, new List<Action<Change, Type>>());
+
+                var list = _subscribeNotifyers[type];
+                if (!list.Contains(callback))
+                    list.Add(callback);
+
+
+                for (int i = 0; i < _colletion.Length; i++)
+                {
+                    if (_colletion[i] != null && (_colletion[i].Type == type || type.IsAssignableFrom(_colletion[i].Type)))
+                    {
+                        InvokeSubscribeNotifyer(Change.Added, type);
+                    }
+                }
+
+            }
+        }
+
+        public static void RemoveSubscribeNotifyer(Type type, Action<Change, Type> callback)
+        {
+            lock (_subscribeNotifyers)
+            {
+                if (_subscribeNotifyers.ContainsKey(type))
+                {
+                    var list = _subscribeNotifyers[type];
+                    list.Remove(callback);
+                }
+            }
+        }
+
+        private static void InvokeSubscribeNotifyer(Change change,Type type)
+        {
+            lock (_subscribeNotifyers)
+            {
+                if (_subscribeNotifyers.ContainsKey(type))
+                {
+                    var list = _subscribeNotifyers[type];
+                    foreach (var action in list)
+                    {
+                        var action1 = action;
+                        Task.Factory.StartNew(() => action1(change,type));
+                    }
+                }
+            }
+        }
+
+
         private static void Add(IColletionItem item)
         {
-            lock (_colletion)
+            lock (CounterLock)
             {
+                while (_counter > 0)
+                {
+                    Monitor.Wait(CounterLock);
+                }
+
                 for (int i = 0; i < _colletion.Length; i++)
                 {
                     if (_colletion[i] == null)
@@ -87,9 +168,9 @@ namespace Server3
                 newColletion[_colletion.Length] = item;
                 _colletion = newColletion; 
             }
+            InvokeSubscribeNotifyer(Change.Added, item.Type);
         }
        
-
         private class CollectionItem<T>: IColletionItem
         {
             public Action<T> Handler { get; set; }
@@ -102,6 +183,12 @@ namespace Server3
             }
         }
 
+    }
+
+    public enum Change
+    {
+        Added,
+        Removed
     }
 
     internal interface IColletionItem

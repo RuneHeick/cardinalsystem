@@ -22,8 +22,7 @@ namespace Server3.Intercom.SharedFile
         private readonly string _baseDirectory;
         private readonly IPEndPoint _me;
 
-        private readonly Dictionary<IPAddress, LocalFileManager> _knownFileManagers =
-            new Dictionary<IPAddress, LocalFileManager>();
+        private readonly Dictionary<IPAddress, LocalFileManager> _knownFileManagers = new Dictionary<IPAddress, LocalFileManager>();
 
         public SharedFileManager(string baseDirectory, IPEndPoint me)
         {
@@ -111,9 +110,10 @@ namespace Server3.Intercom.SharedFile
 
     }
 
-
     internal class LocalFileManager
     {
+        private const int filePacketMaxSize = 1000; 
+
         private readonly IPEndPoint _address;
         private readonly DirectoryInfo _folder;
         private readonly Dictionary<string, BaseFile> _openFiles = new Dictionary<string, BaseFile>();
@@ -279,37 +279,42 @@ namespace Server3.Intercom.SharedFile
                 if (_openFiles.ContainsKey(file.Name))
                     _openFiles.Remove(file.Name);
 
-                UInt32 hash32 = 0;
-                try
-                {
-                    hash32 = Crc32.CalculateHash(file.Data);
-                    byte[] hashbyte = BitConverter.GetBytes(hash32);
-                    using (FileStream w = File.OpenWrite(_folder.FullName + "/" + file.Name))
-                    {
-                        w.Write(file.Data, 0, file.Data.Length);
-                        w.Write(hashbyte, 0, hashbyte.Length);
-                        w.Close();
-                    }
-                }
-                catch
-                {
-                    // ignored
-                }
 
-                if (InfoFileName != file.Name)
+                if (file.Data != null && file.Data.Length <= (0x7f*filePacketMaxSize))
                 {
-                    var filecontainor = GetFile<SystemFileIndexFile>(InfoFileName);
-                    if (filecontainor != null)
+
+                    UInt32 hash32 = 0;
+                    try
                     {
-                        filecontainor.AddFileInfo(file.Name, hash32);
-                        filecontainor.Dispose();
-                        if (_infoFileHash != filecontainor.Hash)
+                        hash32 = Crc32.CalculateHash(file.Data);
+                        byte[] hashbyte = BitConverter.GetBytes(hash32);
+                        using (FileStream w = File.OpenWrite(_folder.FullName + "/" + file.Name))
                         {
-                            SendMulticastUpdate(filecontainor.Hash);
-                            _infoFileHash = filecontainor.Hash;
+                            w.Write(file.Data, 0, file.Data.Length);
+                            w.Write(hashbyte, 0, hashbyte.Length);
+                            w.Close();
                         }
                     }
+                    catch
+                    {
+                        // ignored
+                    }
 
+                    if (InfoFileName != file.Name)
+                    {
+                        var filecontainor = GetFile<SystemFileIndexFile>(InfoFileName);
+                        if (filecontainor != null)
+                        {
+                            filecontainor.AddFileInfo(file.Name, hash32);
+                            filecontainor.Dispose();
+                            if (_infoFileHash != filecontainor.Hash)
+                            {
+                                SendMulticastUpdate(filecontainor.Hash);
+                                _infoFileHash = filecontainor.Hash;
+                            }
+                        }
+
+                    }
                 }
             }
         }
@@ -398,7 +403,6 @@ namespace Server3.Intercom.SharedFile
 
         }
 
-
         public void RequestFile(string name, byte retransmit = 0)
         {
             NetworkRequest rq = NetworkRequest.CreateSignal(1 + name.Length, PacketType.Tcp);
@@ -483,7 +487,7 @@ namespace Server3.Intercom.SharedFile
                         Console.WriteLine("File Sendt To: " + iPEndPoint.Address);
                         while (size < data.Length)
                         {
-                            int packetLength = (data.Length - size) > 1000 ? 1000 : data.Length - size;
+                            int packetLength = (data.Length - size) > filePacketMaxSize ? filePacketMaxSize : data.Length - size;
                             if (size + packetLength == data.Length)
                                 done = true;
 
@@ -553,13 +557,13 @@ namespace Server3.Intercom.SharedFile
 
             foreach (var file in files)
             {
-                if (file.Name != InfoFileName)
+                if (file.Name != InfoFileName && file.Length <= (0x7f * filePacketMaxSize))
                 {
                     var hash = GetHash(file.Name);
                     filecontainor.AddFileInfo(file.Name, hash);
                 }
             }
-
+            
             filecontainor.Dispose();
             _infoFileHash = filecontainor.Hash;
         }

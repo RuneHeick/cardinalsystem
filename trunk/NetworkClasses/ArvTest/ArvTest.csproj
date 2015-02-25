@@ -4,15 +4,16 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{63D12CDE-58C3-41F1-B9D6-86EA0A603278}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <ProjectGuid>{E272DBC0-BBAD-45C2-AFEE-CEBDD2A1B652}</ProjectGuid>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Server3</RootNamespace>
-    <AssemblyName>Server3</AssemblyName>
+    <RootNamespace>ArvTest</RootNamespace>
+    <AssemblyName>ArvTest</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -22,6 +23,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -39,36 +41,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="EventBus\EventBus.cs" />
-    <Compile Include="Intercom\Errors\ErrorTypes.cs" />
-    <Compile Include="Intercom\Network\ClientFoundEvent.cs" />
-    <Compile Include="Intercom\Network\InterComCommands.cs" />
-    <Compile Include="Intercom\Network\Packets\IPacket.cs" />
-    <Compile Include="Intercom\Network\Packets\NetworkPacket.cs" />
-    <Compile Include="Intercom\Network\Packets\NetworkFullPacket.cs" />
-    <Compile Include="Intercom\Network\NetworkRequest.cs" />
-    <Compile Include="Intercom\Network\NIC.cs" />
-    <Compile Include="Intercom\Network\NICHelpers\Helpers\IConnector.cs" />
-    <Compile Include="Intercom\Network\NICHelpers\MulticastConnector.cs" />
-    <Compile Include="Intercom\Network\NICHelpers\TCPConnector.cs" />
-    <Compile Include="Intercom\Network\NICHelpers\UDPConnector.cs" />
-    <Compile Include="Intercom\Network\Packets\NetworkSegmentedPacket.cs" />
-    <Compile Include="Intercom\Network\Packets\NetworkShortPacket.cs" />
-    <Compile Include="Intercom\SharedFile\Files\BaseFile.cs" />
-    <Compile Include="Intercom\SharedFile\FileManager.cs" />
-    <Compile Include="Intercom\SharedFile\Files\SystemFileIndexFile.cs" />
-    <Compile Include="Intercom\SharedFile\FileRequest.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Utility\Crc16.cs" />
-    <Compile Include="Utility\Crc32.cs" />
-    <Compile Include="Utility\IPEqualityComparer.cs" />
-    <Compile Include="Utility\IPRange.cs" />
-    <Compile Include="Utility\MemberInfoGetting.cs" />
-    <Compile Include="Utility\OrderedList.cs" />
-    <Compile Include="Utility\TimeOutWatcher.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="EventBus\Messages\" />
+    <None Include="App.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

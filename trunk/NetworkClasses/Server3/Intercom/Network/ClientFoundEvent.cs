@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Server3.Intercom.Network
 {
-    public class ClientFoundEvent
+    internal class ClientFoundEvent
     {
         public IPEndPoint Address { get; set; }
 
