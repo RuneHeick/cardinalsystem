@@ -19,11 +19,9 @@ namespace MulticastTestApp
         static void Main(string[] args)
         {
 
-            DirectoryInfo temp = new DirectoryInfo("Folder");
-            if(temp.Exists)
-                temp.Delete(true);
+            
 
-            var address = new IPEndPoint(IPAddress.Parse("192.168.87.101"), 5050);
+            var address = new IPEndPoint(IPAddress.Parse("192.168.87.103"), 5050);
             
             NIC network = new NIC(address);
             SharedFileManager fileManager = new SharedFileManager("Folder", address);

@@ -10,7 +10,7 @@ namespace Server3.Intercom.SharedFile
 {
     internal class FileRequest
     {
-        public static FileRequest CreateFileRequest<T>(string name, IPEndPoint address, Action<T> gotFileCallback, Action<ErrorType> errorCallback) where T: BaseFile 
+        public static FileRequest CreateFileRequest<T>(string name, IPEndPoint address, Action<T> gotFileCallback, Action<ErrorType> errorCallback) where T: BaseFile , new ()
         {
             var rq = new FileRequest(name, address, errorCallback);
             rq.GotFileCallback = () => { gotFileCallback((T) rq.File); };

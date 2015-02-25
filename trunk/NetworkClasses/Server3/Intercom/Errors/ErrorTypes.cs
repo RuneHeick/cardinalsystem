@@ -11,6 +11,7 @@ namespace Server3.Intercom.Errors
         TimeOut,
         Connection,
         RequestFull,
-        PacketFormat
+        PacketFormat,
+        ResourceNotFound
     }
 }

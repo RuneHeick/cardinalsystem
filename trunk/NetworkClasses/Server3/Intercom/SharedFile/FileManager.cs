@@ -10,8 +10,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Server.InterCom;
+using Server3.Intercom.Errors;
 using Server3.Intercom.Network;
 using Server3.Intercom.Network.Packets;
+using Server3.Intercom.SharedFile;
 using Server3.Intercom.SharedFile.Files;
 using Server3.Utility;
 
@@ -21,7 +23,6 @@ namespace Server3.Intercom.SharedFile
     {
         private readonly string _baseDirectory;
         private readonly IPEndPoint _me;
-
         private readonly Dictionary<IPAddress, LocalFileManager> _knownFileManagers = new Dictionary<IPAddress, LocalFileManager>();
 
         public SharedFileManager(string baseDirectory, IPEndPoint me)
@@ -31,6 +32,8 @@ namespace Server3.Intercom.SharedFile
             InitDirectory();
 
             EventBus.Subscribe<ClientFoundEvent>(NewClientFount);
+            EventBus.Subscribe<FileRequest>(NewFileRequest);
+
         }
 
         #region Setup
@@ -69,40 +72,30 @@ namespace Server3.Intercom.SharedFile
 
         #endregion
 
-        #region ReciveFile 
+        #region FileRequest
 
-        public T GetFile<T>(string name, IPAddress address, bool create = false) where T : BaseFile, new()
+        private void NewFileRequest(FileRequest fileRequest)
         {
+            // will most likely have a thread. 
             LocalFileManager manager = null;
             lock (_knownFileManagers)
             {
-                if (_knownFileManagers.ContainsKey(address))
-                    manager = _knownFileManagers[address];
+                if (_knownFileManagers.ContainsKey(fileRequest.Address.Address))
+                    manager = _knownFileManagers[fileRequest.Address.Address];
             }
 
-            if (manager != null)
+            // No Connection 
+            if (manager == null)
             {
-                return manager.GetFile<T>(name, create);
+                if (fileRequest.ErrorCallback != null)
+                    fileRequest.ErrorCallback(ErrorType.Connection);
+                return;
             }
 
-            return null;
-        }
+            BaseFile file = manager.GetFile(fileRequest.Name, fileRequest.type);
 
-        public UInt32 GetHash(string name, IPAddress address)
-        {
-            LocalFileManager manager = null;
-            lock (_knownFileManagers)
-            {
-                if (_knownFileManagers.ContainsKey(address))
-                    manager = _knownFileManagers[address];
-            }
 
-            if (manager != null)
-            {
-                return manager.GetHash(name);
-            }
 
-            return 0;
         }
 
         #endregion
@@ -117,6 +110,7 @@ namespace Server3.Intercom.SharedFile
         private readonly IPEndPoint _address;
         private readonly DirectoryInfo _folder;
         private readonly Dictionary<string, BaseFile> _openFiles = new Dictionary<string, BaseFile>();
+        private readonly List<FileRequest> _reqestedFiles = new List<FileRequest>();
         private UInt32 _infoFileHash = 0;
 
         private byte _fileReciveSession = 0;
@@ -144,7 +138,7 @@ namespace Server3.Intercom.SharedFile
             EventBus.Subscribe<NetworkPacket>(MulticastUpdateRecived,
                 (p) => p.Address.Address.Equals(_address.Address) && p.Command == (byte)InterComCommands.PacketInfo && p.Type == PacketType.Multicast);
 
-            using (var filecontainor = GetFile<SystemFileIndexFile>(InfoFileName))
+            using (var filecontainor = GetFile(InfoFileName, typeof(SystemFileIndexFile)))
             {
                 if (filecontainor == null)
                     RequestFile(InfoFileName);
@@ -156,7 +150,7 @@ namespace Server3.Intercom.SharedFile
             isLocal = true;
             LocalSystemFileIndexFileInit();
 
-            var testfile = GetFile<BaseFile>("TestFile", true);
+            var testfile = GetFile("TestFile", typeof(BaseFile));
             testfile.Data = new byte[] {(byte) 'a', (byte) 'b', (byte) 'c'};
             testfile.Dispose();
 
@@ -168,16 +162,32 @@ namespace Server3.Intercom.SharedFile
 
         #region FileSystem
 
-        public T GetFile<T>(string name, bool create = false) where T : BaseFile, new()
+        public void AnswerRequest(FileRequest reqest)
         {
-            T file = null;
+            var item = GetFile(reqest.Name, reqest.type);
+            if (item == null)
+            {
+                lock (_reqestedFiles)
+                {
+                    _reqestedFiles.Add(reqest);
+                }
+            }
+            reqest.File = item;
+            reqest.GotFileCallback(); 
+        }
+
+        public BaseFile GetFile(string name, Type toCreate)
+        {
+            BaseFile file = null;
             lock (_openFiles)
             {
                 if (_openFiles.ContainsKey(name))
-                    return _openFiles[name] as T;
+                    return _openFiles[name];
 
-                if (File.Exists(_folder.FullName + "/" + name) || create)
-                    file = CreateOrOpenFile<T>(name);
+                if (File.Exists(_folder.FullName + "/" + name) || isLocal )
+                    file = CreateOrOpenFile(name, toCreate);
+                else
+                    RequestFile(name);
 
                 if (file != null)
                     _openFiles.Add(file.Name, file);
@@ -212,11 +222,11 @@ namespace Server3.Intercom.SharedFile
             return 0;
         }
 
-        private T CreateOrOpenFile<T>(string name) where T : BaseFile, new()
+        private BaseFile CreateOrOpenFile(string name, Type toCreate) 
         {
             lock (_folder)
             {
-                T file = null;
+                BaseFile file = null;
                 FileInfo fileInfo = new FileInfo(_folder.FullName + "/" + name);
                 if (fileInfo.Exists)
                 {
@@ -231,32 +241,29 @@ namespace Server3.Intercom.SharedFile
                             r.Read(hash, 0, Crc32.HashSize);
                             r.Close();
 
-                            file = new T()
-                            {
-                                Data = data,
-                                Name = name,
-                                Hash = BitConverter.ToUInt32(hash, 0),
-                            };
+                            file = Activator.CreateInstance(toCreate) as BaseFile;
+                            file.Data = data;
+                            file.Name = name;
+                            file.Hash = BitConverter.ToUInt32(hash, 0);
+
                             if (isLocal)
                                 file.CloseAction = SaveFile;
                             else
                                 file.CloseAction = CloseFile;
-
                         }
                     }
                     catch
                     {
-                        throw;
+                        // ignored
                     }
                 }
                 else
                 {
-                    file = new T()
-                    {
-                        Data = new byte[0],
-                        Name = name,
-                        CloseAction = SaveFile
-                    };
+                    file = Activator.CreateInstance(toCreate) as BaseFile;
+                    if (file == null) return null; 
+                    file.Data = new byte[0];
+                    file.Name = name;
+                    file.CloseAction = SaveFile;
                 }
 
                 return file;
@@ -302,7 +309,7 @@ namespace Server3.Intercom.SharedFile
 
                     if (InfoFileName != file.Name)
                     {
-                        var filecontainor = GetFile<SystemFileIndexFile>(InfoFileName);
+                        SystemFileIndexFile filecontainor = GetFile(InfoFileName, typeof(SystemFileIndexFile)) as SystemFileIndexFile;
                         if (filecontainor != null)
                         {
                             filecontainor.AddFileInfo(file.Name, hash32);
@@ -322,6 +329,11 @@ namespace Server3.Intercom.SharedFile
         #endregion
 
         #region Network 
+
+        private void UpdateFile(string name, byte[] file)
+        {
+            throw new NotImplementedException();
+        }
 
         private void NetworkPacketRecived(NetworkPacket packet)
         {
@@ -366,10 +378,9 @@ namespace Server3.Intercom.SharedFile
             int session = 0;
 
 
-            NetworkPacket p;
             while (true)
             {
-                p = recivedFile.Packets.FirstOrDefault((o) => (o[1] & 0x7F) == session);
+                var p = recivedFile.Packets.FirstOrDefault((o) => (o[1] & 0x7F) == session);
                 if (p != null)
                 {
                     NetworkPacket.Copy(file, startIndex, p, 2, p.PayloadLength - 2);
@@ -385,21 +396,30 @@ namespace Server3.Intercom.SharedFile
                 }
             }
 
-            BaseFile fileinfo;
-            using (fileinfo = CreateOrOpenFile<BaseFile>(recivedFile.Name))
+            FileRequest rq = null;
+            lock (_reqestedFiles)
             {
-                fileinfo.Data = file;
+                rq = _reqestedFiles.FirstOrDefault((o) => o.Name == recivedFile.Name);
+                _reqestedFiles.Remove(rq);
             }
+
+            UpdateFile(recivedFile.Name, file);
+
+            if (rq != null)
+            {
+                BaseFile item = GetFile(rq.Name, rq.type);
+                rq.File = item;
+                rq.GotFileCallback(); 
+            }
+
 
             Console.WriteLine("File " + recivedFile.Name + " recived from " + _address.Address);
 
-            if (fileinfo.Name == InfoFileName)
-                FileDescriptionRecived(new SystemFileIndexFile()
-                {
-                    Data = fileinfo.Data,
-                    Hash = fileinfo.Hash,
-                    Name = fileinfo.Name
-                });
+            if (recivedFile.Name == InfoFileName)
+            {
+                var infofile = (SystemFileIndexFile) GetFile(recivedFile.Name, typeof (SystemFileIndexFile));
+                FileDescriptionRecived(infofile);
+            }
 
         }
 
@@ -445,6 +465,19 @@ namespace Server3.Intercom.SharedFile
                     {
                         RequestFile(obj.Name, ++obj.Retransmit);
                     }
+                    else
+                    {
+                        lock (_reqestedFiles)
+                        {
+                            var rq = _reqestedFiles.FirstOrDefault((o) => o.Name == obj.Name);
+                            if (rq != null)
+                            {
+                                _reqestedFiles.Remove(rq);
+                                rq.ErrorCallback(ErrorType.ResourceNotFound);
+                            }
+                        }
+                    }
+
                 }
             }
         }
@@ -540,7 +573,23 @@ namespace Server3.Intercom.SharedFile
 
         private void FileDescriptionRecived(SystemFileIndexFile systemFileIndexFile)
         {
-            _infoFileHash = systemFileIndexFile.Hash; 
+            _infoFileHash = systemFileIndexFile.Hash;
+
+            lock (_reqestedFiles)
+            {
+                for (int i = 0; i < _reqestedFiles.Count; i++)
+                {
+                    var item = systemFileIndexFile.filesInformation.FirstOrDefault((o) => o.Name == _reqestedFiles[i].Name);
+                    if (item == null)
+                    {
+                        var t = _reqestedFiles[i];
+                        _reqestedFiles.Remove(t);
+                        t.ErrorCallback(ErrorType.ResourceNotFound);
+                        i--; 
+                    }
+                }
+            }
+
             foreach (var info in systemFileIndexFile.filesInformation)
             {
                 if ((!Exists(info.Name)) || GetHash(info.Name) != info.Hash)
@@ -552,7 +601,7 @@ namespace Server3.Intercom.SharedFile
 
         private void LocalSystemFileIndexFileInit()
         {
-            var filecontainor = GetFile<SystemFileIndexFile>(InfoFileName, true);
+            var filecontainor = GetFile(InfoFileName, typeof(SystemFileIndexFile)) as SystemFileIndexFile;
             FileInfo[] files = _folder.GetFiles();
 
             foreach (var file in files)
@@ -568,29 +617,35 @@ namespace Server3.Intercom.SharedFile
             _infoFileHash = filecontainor.Hash;
         }
 
-        private void SendMulticastUpdate(UInt32 hash)
-        {
-            NetworkRequest rq = NetworkRequest.CreateSignal(4, PacketType.Multicast);
-            NetworkPacket.Copy(rq.Packet, 0, BitConverter.GetBytes(hash), 0, 4);
-            rq.Packet.Command = (byte)InterComCommands.PacketInfo;
-            EventBus.Publich(rq);
-        }
-
-        private void MulticastUpdateRecived(NetworkPacket packet)
-        {
-            if (packet.PayloadLength == 4)
-            {
-                byte[] hashBytes = new byte[4];
-                NetworkPacket.Copy(hashBytes, 0, packet, 0, 4);
-                UInt32 hash = BitConverter.ToUInt32(hashBytes, 0);
-
-                if (_infoFileHash != hash)
-                    RequestFile(InfoFileName);
-
-            }
-        }
 
         #endregion
+
+        #region MulticastUpdate
+
+            private void SendMulticastUpdate(UInt32 hash)
+            {
+                NetworkRequest rq = NetworkRequest.CreateSignal(4, PacketType.Multicast);
+                NetworkPacket.Copy(rq.Packet, 0, BitConverter.GetBytes(hash), 0, 4);
+                rq.Packet.Command = (byte)InterComCommands.PacketInfo;
+                EventBus.Publich(rq);
+            }
+
+            private void MulticastUpdateRecived(NetworkPacket packet)
+            {
+                if (packet.PayloadLength == 4)
+                {
+                    byte[] hashBytes = new byte[4];
+                    NetworkPacket.Copy(hashBytes, 0, packet, 0, 4);
+                    UInt32 hash = BitConverter.ToUInt32(hashBytes, 0);
+
+                    if (_infoFileHash != hash)
+                        RequestFile(InfoFileName);
+
+                }
+            }
+
+        #endregion
+
 
     }
 }
