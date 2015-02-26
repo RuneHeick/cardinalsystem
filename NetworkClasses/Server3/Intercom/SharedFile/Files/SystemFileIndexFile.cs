@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Instrumentation;
+using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,6 +13,8 @@ namespace Server3.Intercom.SharedFile.Files
     {
 
         public List<SystemFileInfo> filesInformation = new List<SystemFileInfo>();
+
+        public IPAddress Address { get; set; }
 
         public override byte[] Data
         {
@@ -32,10 +35,15 @@ namespace Server3.Intercom.SharedFile.Files
                         Hash = hash
                     };
                     filesInformation.Add(info);
+                    OnFileChanged(name); 
                 }
                 else
                 {
-                    info.Hash = hash; 
+                    if (info.Hash != hash)
+                    {
+                        info.Hash = hash;
+                        OnFileChanged(name);
+                    }
                 }
             }
         }
@@ -64,13 +72,7 @@ namespace Server3.Intercom.SharedFile.Files
                     UInt32 hash = BitConverter.ToUInt32(value, i + 1);
                     string name = UTF8Encoding.UTF8.GetString(value, startIndex, i - startIndex);
 
-                    SystemFileInfo info = new SystemFileInfo()
-                    {
-                        Name = name,
-                        Hash = hash
-                    };
-
-                    filesInformation.Add(info);
+                    AddFileInfo(name, hash);
 
                     i += 5;
                     startIndex = i;
@@ -95,11 +97,19 @@ namespace Server3.Intercom.SharedFile.Files
             return ret.ToArray();
         }
 
+        public event Action<IPAddress, string> FileChanged; 
+
 
         public class SystemFileInfo
         {
             public string Name { get; set; }
             public UInt32 Hash { get; set; }
+        }
+
+        protected virtual void OnFileChanged(string name)
+        {
+            var handler = FileChanged;
+            if (handler != null) handler(Address, name);
         }
     }
 }

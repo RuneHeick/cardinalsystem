@@ -43,7 +43,7 @@ namespace Server3.Intercom.SharedFile2
 
         private readonly SafeCollection<string, FileRequest> _requestCollection = new SafeCollection<string, FileRequest>();
         private readonly SafeCollection<string, BaseFile> _collection = new SafeCollection<string, BaseFile>();
-        private readonly SystemFileIndexFile _hashIndexFile = new SystemFileIndexFile();
+        private SystemFileIndexFile _hashIndexFile;
         private IPAddress Address { get; set; }
         private string _path; 
 
@@ -86,6 +86,8 @@ namespace Server3.Intercom.SharedFile2
                         file.AddFileInfo(file.Name, hash);
                     }
                 }
+                _hashIndexFile = file;
+                _hashIndexFile.Address = Address; 
             }
 
         }
