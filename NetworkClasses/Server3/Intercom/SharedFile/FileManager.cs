@@ -309,7 +309,7 @@ namespace Server3.Intercom.SharedFile
                 file = new SystemFileIndexFile();
                 file.Data = new byte[0];
                 file.Name = HashIndexFileName;
-                file.CloseAction = CloseAndSaveFile;
+                file.SaveAction = SaveFile; 
                 _collection[file.Name] = file; 
             }
 
@@ -328,7 +328,7 @@ namespace Server3.Intercom.SharedFile
                     }
                 }
                 _hashIndexFile = file;
-                SafeFile(file.Name, file.Data, BitConverter.GetBytes(file.Hash));
+                file.Save();
             }
 
             if (!Me.Equals(Address))
@@ -364,7 +364,7 @@ namespace Server3.Intercom.SharedFile
             }
             if (item == null)
             {
-                SafeFile(name, data,  BitConverter.GetBytes(Crc32.CalculateHash(data)));
+                save(name, data,  BitConverter.GetBytes(Crc32.CalculateHash(data)));
                 CheckRequest(name, data);
             }
         }
@@ -418,15 +418,13 @@ namespace Server3.Intercom.SharedFile
             }
         }
 
-        private void CloseAndSaveFile(BaseFile file)
+        private void SaveFile(BaseFile file)
         {
-            CloseFile(file); 
-            SafeFile(file.Name, file.Data, BitConverter.GetBytes(file.Hash)); 
-
+            save(file.Name, file.Data, BitConverter.GetBytes(file.Hash)); 
             _hashIndexFile.AddFileInfo(file.Name,file.Hash);
         }
 
-        private void SafeFile(string name, byte[] data, byte[] hash = null)
+        private void save(string name, byte[] data, byte[] hash)
         {
             int i = 0;
             while (i < 3)
@@ -485,9 +483,9 @@ namespace Server3.Intercom.SharedFile
                                 file.Name = name;
                                 file.Hash = BitConverter.ToUInt32(hash, 0);
                                 if (Address.Equals(Me))
-                                    file.CloseAction = CloseAndSaveFile;
-                                else
-                                    file.CloseAction = CloseFile;
+                                    file.SaveAction = SaveFile; 
+                                
+                                file.CloseAction = CloseFile;
                                 _collection[file.Name] = file;
                             }
                         }
@@ -573,7 +571,8 @@ namespace Server3.Intercom.SharedFile
                         info.Data = new byte[0];
                         info.Hash = 0;
                         info.Name = name;
-                        info.CloseAction = CloseAndSaveFile;
+                        info.SaveAction = SaveFile;
+                        info.CloseAction = CloseFile;
                         if (_collection.ContainsFile(name))
                         {
                             return _collection[name];

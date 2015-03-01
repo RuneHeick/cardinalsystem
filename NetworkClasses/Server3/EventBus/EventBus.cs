@@ -18,8 +18,10 @@ namespace Server3
         private static int _counter = 0;
         private static readonly object CounterLock = new object();
 
-        public static void Publich<T>(T item, bool threaded = true)
+        public static void Publich<T>(T item, bool threaded = false)
         {
+            if(item == null)
+                return;
             if (threaded)
                 Task.Factory.StartNew(() => PublichWorker(item));
             else

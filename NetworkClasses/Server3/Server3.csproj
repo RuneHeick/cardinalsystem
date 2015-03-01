@@ -54,6 +54,11 @@
     <Compile Include="Intercom\Network\NICHelpers\UDPConnector.cs" />
     <Compile Include="Intercom\Network\Packets\NetworkSegmentedPacket.cs" />
     <Compile Include="Intercom\Network\Packets\NetworkShortPacket.cs" />
+    <Compile Include="Intercom\PeriodicSyncItem\File\periodicTTFile.cs" />
+    <Compile Include="Intercom\PeriodicSyncItem\GetPeriodicMsgRequest.cs" />
+    <Compile Include="Intercom\PeriodicSyncItem\PeriodicCollections.cs" />
+    <Compile Include="Intercom\PeriodicSyncItem\PeriodicMessage.cs" />
+    <Compile Include="Intercom\PeriodicSyncItem\PeriodicSyncManager.cs" />
     <Compile Include="Intercom\SharedFile\FileCollection.cs" />
     <Compile Include="Intercom\SharedFile\FileManager.cs" />
     <Compile Include="Intercom\SharedFile\FileRequest.cs" />
