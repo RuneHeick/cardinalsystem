@@ -130,14 +130,11 @@ namespace Server3.Intercom.SharedFile
         private static void SendFile(byte id, string name, IPEndPoint iPEndPoint)
         {
             var me = FileManagers[Me.Address];
-            BaseFile file = me.LoadFile(name, typeof (BaseFile));
-            if (file != null)
+            var data = me.GetFileData(name);
+            if (data != null)
             {
                 try
                 {
-                    using (file)
-                    {
-                        byte[] data = file.Data;
                         int size = 0;
                         int session = 0;
                         bool done = false;
@@ -163,7 +160,6 @@ namespace Server3.Intercom.SharedFile
 
                             size += packetLength;
                         }
-                    }
                 }
                 catch (Exception)
                 {
@@ -297,7 +293,8 @@ namespace Server3.Intercom.SharedFile
 
             InitHashIndexFile();
 
-            RequestNewFile(HashIndexFileName);
+            if(!Me.Equals(Address))
+                RequestNewFile(HashIndexFileName);
         }
 
         private void InitHashIndexFile()
@@ -312,6 +309,8 @@ namespace Server3.Intercom.SharedFile
                 file = new SystemFileIndexFile();
                 file.Data = new byte[0];
                 file.Name = HashIndexFileName;
+                file.CloseAction = CloseAndSaveFile;
+                _collection[file.Name] = file; 
             }
 
             if (file != null)
@@ -320,13 +319,16 @@ namespace Server3.Intercom.SharedFile
                 FileInfo[] files = new DirectoryInfo(_path).GetFiles();
                 foreach (var f in files)
                 {
-                    if (f.Name != HashIndexFileName && f.Length <= (0x7f * FilePacketMaxSize))
+                    string filename = f.Name;
+
+                    if (filename != HashIndexFileName && f.Length <= (0x7f * FilePacketMaxSize))
                     {
-                        var hash = GetHash(file.Name);
-                        file.AddFileInfo(file.Name, hash);
+                        var hash = GetHash(filename);
+                        file.AddFileInfo(filename, hash);
                     }
                 }
                 _hashIndexFile = file;
+                SafeFile(file.Name, file.Data, BitConverter.GetBytes(file.Hash));
             }
 
             if (!Me.Equals(Address))
@@ -362,7 +364,7 @@ namespace Server3.Intercom.SharedFile
             }
             if (item == null)
             {
-                SafeFile(name, data);
+                SafeFile(name, data,  BitConverter.GetBytes(Crc32.CalculateHash(data)));
                 CheckRequest(name, data);
             }
         }
@@ -522,6 +524,40 @@ namespace Server3.Intercom.SharedFile
                 }
             }
             return 0;
+        }
+
+        private byte[] GetFileData(string name)
+        {
+            lock (_collection)
+            {
+                if (_collection.ContainsFile(name))
+                {
+                    return _collection[name].Data;
+                }
+
+                byte[] data = null;
+                FileInfo fileInfo = new FileInfo(_path + "/" + name);
+                if (fileInfo.Exists)
+                {
+                    try
+                    {
+                        using (FileStream r = fileInfo.OpenRead())
+                        {
+                            long length = fileInfo.Length - Crc32.HashSize;
+                            data = new byte[length];
+                            r.Read(data, 0, (int)length);
+                            r.Close();
+                        }
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
+                }
+
+
+                return data;
+            }
         }
 
         private BaseFile Create(string name, Type type)
