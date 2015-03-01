@@ -138,7 +138,7 @@ namespace Server3.Intercom.SharedFile
                         int size = 0;
                         int session = 0;
                         bool done = false;
-                        Console.WriteLine("File Sendt To: " + iPEndPoint.Address);
+                        Console.WriteLine("File "+ name+" Sendt To: " + iPEndPoint.Address);
 
                         while (size < data.Length)
                         {
