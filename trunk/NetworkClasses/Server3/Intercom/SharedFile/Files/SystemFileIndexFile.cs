@@ -14,8 +14,6 @@ namespace Server3.Intercom.SharedFile.Files
 
         public List<SystemFileInfo> filesInformation = new List<SystemFileInfo>();
 
-        public IPAddress Address { get; set; }
-
         public override byte[] Data
         {
             get { return ToByte(); }
@@ -97,7 +95,7 @@ namespace Server3.Intercom.SharedFile.Files
             return ret.ToArray();
         }
 
-        public event Action<IPAddress, string> FileChanged; 
+        public event Action<string> FileChanged; 
 
 
         public class SystemFileInfo
@@ -109,7 +107,7 @@ namespace Server3.Intercom.SharedFile.Files
         protected virtual void OnFileChanged(string name)
         {
             var handler = FileChanged;
-            if (handler != null) handler(Address, name);
+            if (handler != null) handler(name);
         }
     }
 }

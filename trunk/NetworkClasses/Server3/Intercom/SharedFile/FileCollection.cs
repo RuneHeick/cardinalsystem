@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Server3.Intercom.SharedFile;
 
-namespace Server3.Intercom.SharedFile2
+namespace Server3.Intercom.SharedFile
 {
     class SafeCollection<TK,TV>
     {
