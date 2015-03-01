@@ -44,6 +44,8 @@ namespace ServerTest
         //
         #endregion
 
+        /*
+
         [TestMethod]
         public void SystemFile()
         {
@@ -99,7 +101,7 @@ namespace ServerTest
             }
             return true;
         }
-
+        */
 
     }
 }
