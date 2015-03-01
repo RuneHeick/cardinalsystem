@@ -15,6 +15,7 @@ namespace MulticastTestApp
     class Program
     {
 
+        private static BaseFile bigFile = null; 
 
         static void Main(string[] args)
         {
@@ -28,6 +29,16 @@ namespace MulticastTestApp
             
             int known = 0;
 
+            FileRequest rq = FileRequest.CreateFileRequest<BaseFile>("The big Testfile.txt", address, gotFile);
+            EventBus.Publich(rq);
+            Thread.Sleep(100);
+            bigFile.Data = new byte[3300];
+            for (int i = 0; i < bigFile.Data.Length; i++)
+            {
+                bigFile.Data[i] = (byte) ((i%25) + 65);
+            }
+            bigFile.Dispose();
+
             while (true)
             {
                 int count = network.KnownEndPoints.Length;
@@ -38,20 +49,16 @@ namespace MulticastTestApp
                 }
                 
                 Thread.Sleep(5000);
-
-                /*
-                using (var file = fileManager.GetFile<BaseFile>("BigFile", address.Address, true))
-                {
-                    file.Data = new byte[100000];
-                    file.Data[0] = (byte)(DateTime.Now.Ticks%255);
-                    Console.WriteLine("Big " + file.Data[0]);
-                }
-                */
-
+                
             }
 
 
 
+        }
+
+        private static void gotFile(BaseFile file)
+        {
+            bigFile = file; 
         }
 
     }
