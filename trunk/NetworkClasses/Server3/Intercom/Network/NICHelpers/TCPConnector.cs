@@ -220,17 +220,9 @@ namespace Server3.Intercom.Network.NICHelpers
             {
                 lock (stream)
                 {
-                    if (stream.IsSending)
-                        stream.ToSend.Add(networkPacket);
-                    else
-                    {
-                        stream.IsSending = true; 
-
+                    
                         byte[] packet = networkPacket.Packet;
                         stream.Client.GetStream().BeginWrite(packet, 0, packet.Length, AsyncWriteComplete, stream);
-                    }
-                       
-
                 }
             }
             catch (Exception e)
@@ -246,23 +238,6 @@ namespace Server3.Intercom.Network.NICHelpers
             {
                 info.Client.GetStream().EndWrite(ar);
                 info.LastTouch = DateTime.Now;
-
-                lock (info)
-                {
-                    if (info.ToSend.Count > 0)
-                    {
-                        var pack = info.ToSend[0]; 
-                        info.ToSend.RemoveAt(0);
-
-                        byte[] packet = pack.Packet;
-                        info.Client.GetStream().BeginWrite(packet, 0, packet.Length, AsyncWriteComplete, info);
-                    }
-                    else
-                    {
-                        info.IsSending = false; 
-                    }
-                }
-
             }
             catch (Exception e)
             {
