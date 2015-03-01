@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Server3;
 using Server3.Intercom.Network;
+using Server3.Intercom.PeriodicSyncItem;
 using Server3.Intercom.SharedFile;
 
 namespace MulticastTestApp
@@ -26,7 +27,10 @@ namespace MulticastTestApp
             
             NIC network = new NIC(address);
             FileManager.Me = address; 
-            
+            PeriodicSyncManager pSync = new PeriodicSyncManager(address);
+ 
+
+
             int known = 0;
 
             FileRequest rq = FileRequest.CreateFileRequest<BaseFile>("The big Testfile.txt", address, gotFile);

@@ -11,7 +11,7 @@ namespace Server3.Intercom
         PortMessage = 0,
         PacketInfo,
         PacketRecive,
-
+        PeriodicMsg,
         Extend = 31
     }
 }

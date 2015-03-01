@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Server3.Utility;
 
 namespace Server3.Intercom.SharedFile
@@ -11,6 +12,7 @@ namespace Server3.Intercom.SharedFile
     {
         private readonly object _objectLock = new object();
         internal Action<BaseFile> CloseAction;
+        internal Action<BaseFile> SaveAction;
         private byte[] _data;
         private uint _hash;
 
@@ -40,10 +42,17 @@ namespace Server3.Intercom.SharedFile
             internal set { _hash = value; }
         }
 
+        public void Save()
+        {
+            if (SaveAction != null)
+                SaveAction(this); 
+        }
+
         public void Dispose()
         {
             lock (_objectLock)
             {
+                Save();
                 if (CloseAction != null)
                 {
                     CloseAction(this);
