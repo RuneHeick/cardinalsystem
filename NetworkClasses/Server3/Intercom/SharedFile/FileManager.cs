@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Schema;
 using Microsoft.Win32.SafeHandles;
 using Server.InterCom;
 using Server.Utility;
@@ -35,7 +36,7 @@ namespace Server3.Intercom.SharedFile
             get { return _me; }
             set
             {
-                if (_me == null)
+                if (_me == null && value != null)
                 {
                     _me = value;
                     Start();
