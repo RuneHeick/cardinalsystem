@@ -16,23 +16,18 @@ namespace Server3.Intercom.PeriodicSyncItem
 
         public string Name { get; private set; }
 
-        byte[] value_ { get; set; }
+        private byte[] _value;
        
-
-        public void SetValue(string Value)
-        {
-            value_ = UTF8Encoding.UTF8.GetBytes(Value);
-        }
 
         public void SetValue(int Value)
         {
             try
             {
-                value_ = BitConverter.GetBytes(Value);
+                _value = BitConverter.GetBytes(Value);
             }
             catch
             {
-                value_ = null;
+                _value = null;
             }
         }
 
@@ -40,11 +35,11 @@ namespace Server3.Intercom.PeriodicSyncItem
         {
             try
             {
-                value_ = BitConverter.GetBytes(Value);
+                _value = BitConverter.GetBytes(Value);
             }
             catch
             {
-                value_ = null;
+                _value = null;
             }
         }
 
@@ -52,31 +47,31 @@ namespace Server3.Intercom.PeriodicSyncItem
         {
             try
             {
-                value_ = new byte[] { Value };
+                _value = new byte[] { Value };
             }
             catch
             {
-                value_ = null;
+                _value = null;
             }
         }
 
         public void SetValue(byte[] Value)
         {
-            value_ = Value;
+            _value = Value;
         }
 
         public override string ToString()
         {
-            return UTF8Encoding.UTF8.GetString(value_);
+            return UTF8Encoding.UTF8.GetString(_value);
         }
 
         public int ToInt()
         {
-            if (value_ == null)
+            if (_value == null)
                 return 0;
             try
             {
-                return BitConverter.ToInt32(value_, 0);
+                return BitConverter.ToInt32(_value, 0);
             }
             catch
             {
@@ -86,11 +81,11 @@ namespace Server3.Intercom.PeriodicSyncItem
 
         public long ToLong()
         {
-            if (value_ == null)
+            if (_value == null)
                 return 0;
             try
             {
-                return BitConverter.ToInt64(value_, 0);
+                return BitConverter.ToInt64(_value, 0);
             }
             catch
             {
@@ -100,11 +95,11 @@ namespace Server3.Intercom.PeriodicSyncItem
 
         public byte ToByte()
         {
-            if (value_ == null)
+            if (_value == null)
                 return 0;
             try
             {
-                return value_[0];
+                return _value[0];
             }
             catch
             {
@@ -114,11 +109,11 @@ namespace Server3.Intercom.PeriodicSyncItem
 
         public byte[] ToArray()
         {
-            if (value_ == null)
+            if (_value == null)
                 return null;
             try
             {
-                return value_;
+                return _value;
             }
             catch
             {
