@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Server3;
 using Server3.Intercom.Network;
 using Server3.Intercom.PeriodicSyncItem;
+using Server3.Intercom.PeriodicSyncItem.File;
 using Server3.Intercom.SharedFile;
 
 namespace MulticastTestApp
@@ -21,9 +22,17 @@ namespace MulticastTestApp
         static void Main(string[] args)
         {
 
-            
 
-            var address = new IPEndPoint(IPAddress.Parse("192.168.87.103"), 5050);
+            PeriodicTTFile test = new PeriodicTTFile();
+            test.Add(0,"Rune",4);
+            test.Add(1, "Maja", 5);
+
+            byte[] data = test.Data;
+
+            test = new PeriodicTTFile();
+            test.Data = data; 
+
+            var address = new IPEndPoint(IPAddress.Parse("192.168.87.101"), 5050);
             
             NIC network = new NIC(address);
             FileManager.Me = address; 

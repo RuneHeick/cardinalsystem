@@ -14,6 +14,8 @@ namespace Server3.Intercom.PeriodicSyncItem
         private PeriodicTTFile _file;
         private IPAddress _address;
 
+        private List<PeriodicMessage> _messages = new List<PeriodicMessage>(); 
+
         public PeriodicCollections(PeriodicTTFile file, IPAddress address)
         {
             _file = file;
