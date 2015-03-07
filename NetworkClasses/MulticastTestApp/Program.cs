@@ -24,8 +24,8 @@ namespace MulticastTestApp
 
 
             PeriodicTTFile test = new PeriodicTTFile();
-            test.Add(0,"Rune",4);
-            test.Add(1, "Maja", 5);
+            test.Add("Rune",4);
+            test.Add("Maja", 5);
 
             byte[] data = test.Data;
 

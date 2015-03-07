@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Server3.Intercom.Errors;
+using Server3.Intercom.Network;
 using Server3.Intercom.Network.Packets;
 using Server3.Intercom.PeriodicSyncItem.File;
 using Server3.Intercom.SharedFile;
@@ -75,8 +76,8 @@ namespace Server3.Intercom.PeriodicSyncItem
             }
             if (me != null)
             {
-                NetworkPacket message = me.GetPeriodicMsg();
-                EventBus.Publich(message);
+                NetworkRequest rq = me.GetPeriodicMsg();
+                EventBus.Publich(rq);
             }
         }
 

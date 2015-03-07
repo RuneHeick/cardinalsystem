@@ -11,7 +11,7 @@ namespace Server3.Intercom.PeriodicSyncItem.File
     internal class PeriodicTTFile:BaseFile
     {
         private readonly Dictionary<byte, DirItem> _translationTable = new Dictionary<byte, DirItem>();
-
+        private readonly Dictionary<string, DirItem> _NametranslationTable = new Dictionary<string, DirItem>();
 
         public override byte[] Data
         {
@@ -46,7 +46,7 @@ namespace Server3.Intercom.PeriodicSyncItem.File
                     byte length = data[startID];
                     int t = Array.FindIndex(data, startID + 1, (o) => o == (byte)0);
                     string name = UTF8Encoding.UTF8.GetString(data, startID + 1, t - startID-1);
-                    Add(command, name, length);
+                    Add(name, length, command);
                     if (data.Length == t + 1)
                         break;
                     startID = t + 1;
@@ -56,19 +56,41 @@ namespace Server3.Intercom.PeriodicSyncItem.File
             }
         }
 
-        public void Add(byte command, string name, byte length)
+        public void Add(string name, byte length, byte? command = null)
         {
-            if (!_translationTable.ContainsKey(command))
+            lock (_translationTable)
             {
-                _translationTable.Add(command,new DirItem(){Name = name, Size = length});
+                if(_NametranslationTable.ContainsKey(name))
+                    return;
+
+                if (command == null)
+                    command = (byte) _translationTable.Count;
+
+                if (!_translationTable.ContainsKey(command.Value) && command <= _translationTable.Count)
+                {
+                    var dirItem = new DirItem() {Name = name, Size = length, Id = command.Value};
+                    _translationTable.Add(command.Value, dirItem);
+                    _NametranslationTable.Add(name, dirItem);
+                }
             }
         }
 
+        public byte? GetId(string name)
+        {
+            lock (_translationTable)
+            {
+                if (_NametranslationTable.ContainsKey(name))
+                    return _NametranslationTable[name].Id;
+            }
+            return null; 
+        }
 
         private class DirItem
         {
             public string Name;
-            public byte Size; 
+            public byte Size;
+            public byte Id; 
         }
+
     }
 }
