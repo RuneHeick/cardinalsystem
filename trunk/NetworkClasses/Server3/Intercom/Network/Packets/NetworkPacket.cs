@@ -35,6 +35,15 @@ namespace Server3.Intercom.Network.Packets
             }
         }
 
+
+        public static void Copy(NetworkPacket destination, int destinationindex, List<byte> source, int sourceindex, int len)
+        {
+            for (int i = 0; i < len; i++)
+            {
+                destination[i + destinationindex] = source[i + sourceindex];
+            }
+        }
+
         public static void Copy(byte[] destination, int destinationindex, NetworkPacket source, int sourceindex, int len)
         {
             for (int i = 0; i < len; i++)

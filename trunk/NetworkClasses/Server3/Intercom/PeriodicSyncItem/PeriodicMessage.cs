@@ -17,7 +17,11 @@ namespace Server3.Intercom.PeriodicSyncItem
         public string Name { get; private set; }
 
         private byte[] _value;
-       
+
+        public int Count
+        {
+            get { return _value.Length; }
+        }
 
         public void SetValue(int Value)
         {
