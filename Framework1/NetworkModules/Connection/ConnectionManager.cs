@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace NetworkModules.Connection
 {
-    class NIC
+    class ConnectionManager
     {
     }
 }

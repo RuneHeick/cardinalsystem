@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
+using NetworkModules.Connection.Connections;
 using Server3.Intercom.Network.NICHelpers;
 
 namespace Server3.Intercom.Network.Packets
@@ -14,9 +15,9 @@ namespace Server3.Intercom.Network.Packets
     {
 
         IPacket _packet;
-        internal IConnector _connector;
+        internal IConnection _connector;
 
-        internal NetworkPacket(byte[] fullPacket, IConnector connector, PacketType type)
+        internal NetworkPacket(byte[] fullPacket, IConnection connector, PacketType type)
         {
             Type = type;
             if (type == PacketType.Tcp)
@@ -72,7 +73,7 @@ namespace Server3.Intercom.Network.Packets
         }
 
 
-        internal NetworkPacket(byte[] info, byte[] payload, IConnector connector, PacketType type)
+        internal NetworkPacket(byte[] info, byte[] payload, IConnection connector, PacketType type)
         {
             _packet = new NetworkSegmentedPacket(info, payload);
             _connector = connector;
@@ -169,10 +170,12 @@ namespace Server3.Intercom.Network.Packets
         public PacketType Type { get; set; }
     }
 
+    [Flags]
     public enum PacketType
     {
-        Tcp,
-        Udp, 
-        Multicast,
+        None = 0,
+        Tcp = 1,
+        Udp = 2, 
+        Multicast = 4,
     }
 }

@@ -39,19 +39,27 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Connection\Helpers\Connection.cs" />
-    <Compile Include="Connection\Helpers\IConnector.cs" />
-    <Compile Include="Connection\Helpers\TCPConnector.cs" />
-    <Compile Include="Connection\Helpers\UDPConnector.cs" />
-    <Compile Include="Connection\NIC.cs" />
-    <Compile Include="NetworkPacket\IPacket.cs" />
-    <Compile Include="NetworkPacket\NetworkFullPacket.cs" />
-    <Compile Include="NetworkPacket\NetworkPacket.cs" />
-    <Compile Include="NetworkPacket\NetworkSegmentedPacket.cs" />
-    <Compile Include="NetworkPacket\NetworkShortPacket.cs" />
+    <Compile Include="Connection\ConnectionManager.cs" />
+    <Compile Include="Connection\Connections\IConnection.cs" />
+    <Compile Include="Connection\Connections\TcpConnection.cs" />
+    <Compile Include="Connection\Connections\UdpConnection.cs" />
+    <Compile Include="Connection\Connection.cs" />
+    <Compile Include="Connection\Helper\Eventhanlder.cs" />
+    <Compile Include="Connection\Connector\TCPConnector.cs" />
+    <Compile Include="Connection\Connector\UDPConnector.cs" />
+    <Compile Include="Connection\NetworkPacket\IPacket.cs" />
+    <Compile Include="Connection\NetworkPacket\NetworkFullPacket.cs" />
+    <Compile Include="Connection\NetworkPacket\NetworkPacket.cs" />
+    <Compile Include="Connection\NetworkPacket\NetworkSegmentedPacket.cs" />
+    <Compile Include="Connection\NetworkPacket\NetworkShortPacket.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\Utility\Utility.csproj">
+      <Project>{bbb49800-84e8-42ff-903b-dede03c5fbd3}</Project>
+      <Name>Utility</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
