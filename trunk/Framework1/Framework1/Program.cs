@@ -1,10 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using FileModules;
 using FileModules.Event;
+using NetworkModules.Connection;
+using NetworkModules.Connection.Connector;
+using Server3.Intercom.Network.Packets;
 
 namespace Framework1
 {
@@ -23,7 +28,44 @@ namespace Framework1
             s2.SettingChanged += SettingChangedHandler;
             s1.Value = "Hop";
 
+
+            ConnectionManager RemoteManager = new ConnectionManager(new IPEndPoint(IPAddress.Loopback, 5000));
+            ConnectionManager conManager = new ConnectionManager(new IPEndPoint(IPAddress.Loopback, 5050));
+
+            RemoteManager.RemoteConnectionCreated += NewConnection; 
+
+
+            Connection connection = conManager.GetConnection(new IPEndPoint(IPAddress.Loopback, 5000)); 
+            connection.OnStatusChanged += StatusChanged;
+
+            Thread.Sleep(100);
+
+            
+
+            connection.Send(new NetworkPacket(10,PacketType.Udp));
+
+            Thread.Sleep(100);
+
+            connection.Close();
+
             Console.ReadKey();
+        }
+
+        private static void NewConnection(object sender, ConnectionEventArgs<Connection> e)
+        {
+            e.Connection.OnStatusChanged += StatusChanged;
+            e.Connection.OnPacketRecived += PacketRecived;
+        }
+
+        private static void PacketRecived(object sender, PacketEventArgs e)
+        {
+            
+        }
+
+        private static void StatusChanged(object sender, ConnectionEventArgs e)
+        {
+            Connection con = (Connection) (sender); 
+            Console.WriteLine("Setting Changed of "+ con.RemoteEndPoint+" to: "+e.Status.ToString());
         }
 
         private static void SettingChangedHandler(object sender, SettingEventArgs<int> e)

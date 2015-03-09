@@ -1,14 +1,14 @@
-﻿using Server3.Intercom.Network.NICHelpers;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using NetworkModules.Connection.NetworkPacket;
 
 namespace Server3.Intercom.Network.Packets
 {
-    class NetworkSegmentedPacket:IPacket
+    class NetworkSegmentedPacket:Packet
     {
 
         private byte[] _info;
@@ -20,7 +20,7 @@ namespace Server3.Intercom.Network.Packets
             _packet = packet; 
         }
 
-        public byte[] Packet
+        internal override byte[] PacketData
         {
             get 
             {
@@ -31,7 +31,7 @@ namespace Server3.Intercom.Network.Packets
             }
         }
 
-        public byte Command
+        public override byte Command
         {
             get { return (byte)(_info[1] >> 3); }
             set
@@ -42,29 +42,29 @@ namespace Server3.Intercom.Network.Packets
             }
         }
 
-        public byte Sesion
+        public override byte Sesion
         {
             get { return (byte)(_info[0] & 0x7F); }
             set { _info[0] = (byte)((_info[0] & 0x80) + (value & 0x7F)); }
         }
 
-        public bool IsResponse
+        public override bool IsResponse
         {
             get { return (_info[0] & 0x80) > 0; }
             set { _info[0] = value ? _info[0] |= 0x80 : _info[0] &= 0x7F; }
         }
 
-        public int PayloadLength
+        public override int PayloadLength
         {
             get { return _packet.Length; }
         }
 
-        public int PacketLength
+        public override int PacketLength
         {
             get { return PayloadLength + _info.Length; }
         }
 
-        public byte this[int i]
+        public override byte this[int i]
         {
             get
             {

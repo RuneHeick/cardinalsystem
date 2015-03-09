@@ -13,7 +13,7 @@ namespace NetworkModules.Connection.Connections
     {
         private UdpConnector uDPConnector;
         public IPEndPoint RemoteEndPoint { get; private set; }
-        public UdpConnection(UdpConnector udpConnector, System.Net.IPEndPoint endPoint)
+        internal UdpConnection(UdpConnector udpConnector, System.Net.IPEndPoint endPoint)
         {
             this.uDPConnector = udpConnector;
             this.RemoteEndPoint = endPoint;

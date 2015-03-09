@@ -13,9 +13,10 @@ namespace NetworkModules.Connection.Connector
         readonly UdpClient _listener;
         readonly Dictionary<IPEndPoint,WeakReference<UdpConnection>> _connenections = new Dictionary<IPEndPoint, WeakReference<UdpConnection>>(new IPendPointEqualityComparer());
 
-        public UdpConnector(IPEndPoint endPoint)
+        internal UdpConnector(IPEndPoint endPoint)
         {
             _listener = new UdpClient(endPoint);
+            StartRecive();
         }
 
         private void StartRecive()
@@ -71,13 +72,37 @@ namespace NetworkModules.Connection.Connector
             }
         }
 
-        public void Send(byte[] data, IPEndPoint endPoint)
+        internal UdpConnection GetConnection(IPEndPoint remoteEndPoint)
+        {
+            UdpConnection con;
+            lock (_connenections)
+            {
+                if (_connenections.ContainsKey(remoteEndPoint))
+                {
+                    var connectionref = _connenections[remoteEndPoint];
+                    bool succes = connectionref.TryGetTarget(out con);
+                    if (succes)
+                        return con;
+                    else
+                    {
+                        _connenections.Remove(remoteEndPoint);
+                    }
+                }
+
+                con = new UdpConnection(this, remoteEndPoint);
+                _connenections.Add(remoteEndPoint, new WeakReference<UdpConnection>(con));
+                return con;
+            }
+        }
+
+
+        internal void Send(byte[] data, IPEndPoint endPoint)
         {
             _listener.Client.SendTo(data, 0, endPoint); 
         }
 
 
-        public event ConnectionHandler<UdpConnection> RemoteConnectionCreated;
+        internal event ConnectionHandler<UdpConnection> RemoteConnectionCreated;
 
         private void OnRemoteConnectionCreated(UdpConnection con)
         {

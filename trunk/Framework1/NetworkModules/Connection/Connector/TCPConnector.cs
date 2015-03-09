@@ -18,7 +18,7 @@ namespace NetworkModules.Connection.Helpers
         private readonly object _syncRoot = new object();
         private readonly IPEndPoint _meEndPoint; 
 
-        public TCPConnector(IPEndPoint endPoint)
+        internal TCPConnector(IPEndPoint endPoint)
         {
             _meEndPoint = endPoint;
             _listener = new TcpListener(endPoint.Address, endPoint.Port);
@@ -61,13 +61,14 @@ namespace NetworkModules.Connection.Helpers
             if (handler != null)
             {
                 TcpConnection connection = new TcpConnection(client, connectSocket);
+                connection.Status = ConnectionStatus.Connected;
                 ConnectionEventArgs<TcpConnection> e = new ConnectionEventArgs<TcpConnection>(connection);
                 handler(this, e);
             }
         }
 
 
-        public TcpConnection CreateConnection(IPEndPoint endPoint)
+        internal TcpConnection CreateConnection(IPEndPoint endPoint)
         {
             var client = new TcpClient();
             TcpConnection connection = new TcpConnection(client, endPoint);
@@ -88,13 +89,13 @@ namespace NetworkModules.Connection.Helpers
             }
             catch (Exception e)
             {
-                info.Item2.Status = ConnectionStatus.Disconnected;
+                info.Item2.Status = ConnectionStatus.Error;
             }
         }
 
 
         private event ConnectionHandler<TcpConnection> _remoteConnectionCreated;
-        public event ConnectionHandler<TcpConnection> RemoteConnectionCreated
+        internal event ConnectionHandler<TcpConnection> RemoteConnectionCreated
         {
             add
             {

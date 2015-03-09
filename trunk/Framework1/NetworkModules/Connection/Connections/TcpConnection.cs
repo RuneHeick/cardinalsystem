@@ -14,29 +14,37 @@ namespace NetworkModules.Connection.Connections
     internal class TcpConnection : IConnection
     {
         private readonly TcpClient _client;
-        private ConnectionStatus _status;
-        private readonly List<NetworkPacket> _toBeSend = new List<NetworkPacket>(3);  
+        private ConnectionStatus _status = ConnectionStatus.Disconnected;
+        private readonly List<NetworkPacket> _toBeSend = new List<NetworkPacket>(3);
+        private readonly object _statusLock = new object(); 
+
 
         private byte[] _infoBuffer;
         private byte[] _packetBuffer;
-        private int RxLength = 0; 
+        private int _rxLength = 0; 
 
-        public IPEndPoint ConnectSocket { get; private set; }
+        public IPEndPoint RemoteEndPoint { get; private set; }
 
         public ConnectionStatus Status
         {
             get { return _status; }
-            set
+            internal set
             {
-                _status = value;
-                StatusChanged(value);
+                lock (_statusLock)
+                {
+                    if (_status != value)
+                    {
+                        _status = value;
+                        StatusChanged(value);
+                    }
+                }
             }
         }
 
-        public TcpConnection(TcpClient client, IPEndPoint connectSocket)
+        internal TcpConnection(TcpClient client, IPEndPoint remoteEndPoint)
         {
             _client = client;
-            ConnectSocket = connectSocket;
+            RemoteEndPoint = remoteEndPoint;
             Reset();
         }
 
@@ -47,6 +55,7 @@ namespace NetworkModules.Connection.Connections
                 StartRead();
                 SendQueue(); 
             }
+            FireOnStatusChanged(status);
         }
 
         private void SendQueue()
@@ -75,7 +84,7 @@ namespace NetworkModules.Connection.Connections
                 {
                     int packetLen = NetworkPacket.GetPacketLength(_infoBuffer);
                     _packetBuffer = new byte[packetLen];
-                    RxLength = 0; 
+                    _rxLength = 0; 
                     _client.GetStream().BeginRead(_packetBuffer, 0, packetLen, AsyncPacketReadComplete, null);
                 }
                 else
@@ -94,10 +103,10 @@ namespace NetworkModules.Connection.Connections
             try
             {
                 int len = _client.GetStream().EndRead(ar);
-                RxLength += len;
+                _rxLength += len;
                 if (len > 0)
                 {
-                    if (RxLength == _packetBuffer.Length)
+                    if (_rxLength == _packetBuffer.Length)
                     {
                         var infoBuffer = _infoBuffer;
                         var packetBuffer = _packetBuffer;
@@ -107,14 +116,14 @@ namespace NetworkModules.Connection.Connections
                         NetworkPacket recivedPacket = new NetworkPacket(infoBuffer, packetBuffer, this, PacketType.Tcp)
                         {
                             TimeStamp = DateTime.Now,
-                            Address = ConnectSocket
+                            Address = RemoteEndPoint
                         };
 
                         OnOnPacketRecived(recivedPacket);
                     }
                     else
                     {
-                        _client.GetStream().BeginRead(_packetBuffer, RxLength, _packetBuffer.Length - RxLength, AsyncPacketReadComplete, null);
+                        _client.GetStream().BeginRead(_packetBuffer, _rxLength, _packetBuffer.Length - _rxLength, AsyncPacketReadComplete, null);
                     }
                 }
                 else
@@ -131,7 +140,7 @@ namespace NetworkModules.Connection.Connections
         private void Reset()
         {
             _infoBuffer = new byte[3];
-            RxLength = 0; 
+            _rxLength = 0; 
         }
 
         public PacketType Supported
@@ -191,6 +200,7 @@ namespace NetworkModules.Connection.Connections
         }
 
         public event PacketHandler OnPacketRecived;
+      
 
         private void OnOnPacketRecived(NetworkPacket packet)
         {
@@ -201,6 +211,19 @@ namespace NetworkModules.Connection.Connections
                 handler(this, e);
             }
                 
+        }
+
+        public event ConnectionHandler OnStatusChanged;
+
+        private void FireOnStatusChanged(ConnectionStatus status)
+        {
+            var handler = OnStatusChanged;
+            if (handler != null)
+            {
+                var e = new ConnectionEventArgs(status);
+                handler(this, e);
+            }
+
         }
     }
 }

@@ -6,6 +6,7 @@ namespace NetworkModules.Connection.Connector
 
     public delegate void ConnectionHandler<T>(object sender, ConnectionEventArgs<T> e);
     public delegate void PacketHandler(object sender, PacketEventArgs e);
+    public delegate void ConnectionHandler(object sender, ConnectionEventArgs e);
 
     public class ConnectionEventArgs<T> : EventArgs
     {
@@ -26,5 +27,16 @@ namespace NetworkModules.Connection.Connector
 
         public NetworkPacket Packet { get; private set; }
     }
+
+    public class ConnectionEventArgs : EventArgs
+    {
+        public ConnectionEventArgs(ConnectionStatus status)
+        {
+            Status = status;
+        }
+
+        public ConnectionStatus Status { get; private set; }
+    }
+
 
 }
