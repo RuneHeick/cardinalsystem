@@ -47,11 +47,13 @@
     <Compile Include="Connection\Helper\Eventhanlder.cs" />
     <Compile Include="Connection\Connector\TCPConnector.cs" />
     <Compile Include="Connection\Connector\UDPConnector.cs" />
-    <Compile Include="Connection\NetworkPacket\IPacket.cs" />
-    <Compile Include="Connection\NetworkPacket\NetworkFullPacket.cs" />
+    <Compile Include="Connection\NetworkPacket\Interfaces\IReqest.cs" />
+    <Compile Include="Connection\NetworkPacket\Interfaces\ISignal.cs" />
+    <Compile Include="Connection\NetworkPacket\Interfaces\Packet.cs" />
+    <Compile Include="Connection\NetworkPacket\base Structures\NetworkFullPacket.cs" />
     <Compile Include="Connection\NetworkPacket\NetworkPacket.cs" />
-    <Compile Include="Connection\NetworkPacket\NetworkSegmentedPacket.cs" />
-    <Compile Include="Connection\NetworkPacket\NetworkShortPacket.cs" />
+    <Compile Include="Connection\NetworkPacket\base Structures\NetworkSegmentedPacket.cs" />
+    <Compile Include="Connection\NetworkPacket\base Structures\NetworkShortPacket.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

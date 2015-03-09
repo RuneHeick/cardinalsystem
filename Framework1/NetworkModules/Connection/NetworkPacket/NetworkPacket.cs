@@ -1,20 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Runtime.CompilerServices;
-using System.Security.Policy;
-using System.Text;
-using System.Threading.Tasks;
 using NetworkModules.Connection.Connections;
-using Server3.Intercom.Network.NICHelpers;
+using NetworkModules.Connection.NetworkPacket;
 
 namespace Server3.Intercom.Network.Packets
 {
     public class NetworkPacket
     {
 
-        IPacket _packet;
+        Packet _packet;
         internal IConnection _connector;
 
         internal NetworkPacket(byte[] fullPacket, IConnection connector, PacketType type)
@@ -61,7 +56,7 @@ namespace Server3.Intercom.Network.Packets
             }
         }
 
-        internal NetworkPacket(int payloadLength, PacketType type, bool isSignal = false)
+        public NetworkPacket(int payloadLength, PacketType type, bool isSignal = false)
         {
             Type = type; 
             if(type == PacketType.Tcp)
