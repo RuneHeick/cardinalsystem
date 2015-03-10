@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using NetworkModules.Connection.Connector;
 using NetworkModules.Connection.Helpers;
-using Server3.Intercom.Network.Packets;
+using NetworkModules.Connection.Packet;
 
 namespace NetworkModules.Connection.Connections
 {
@@ -82,7 +82,7 @@ namespace NetworkModules.Connection.Connections
                 int len = _client.GetStream().EndRead(ar);
                 if (len == _infoBuffer.Length)
                 {
-                    int packetLen = NetworkPacket.GetPacketLength(_infoBuffer);
+                    int packetLen = PacketBuilder.GetPacketLength(_infoBuffer);
                     _packetBuffer = new byte[packetLen];
                     _rxLength = 0; 
                     _client.GetStream().BeginRead(_packetBuffer, 0, packetLen, AsyncPacketReadComplete, null);
@@ -113,10 +113,11 @@ namespace NetworkModules.Connection.Connections
                         Reset();
                         StartRead();  //Start Reading before using thread to handle Packet. 
                         
-                        NetworkPacket recivedPacket = new NetworkPacket(infoBuffer, packetBuffer, this, PacketType.Tcp)
+                        NetworkPacket recivedPacket = new NetworkPacket(packetBuffer, 0)
                         {
                             TimeStamp = DateTime.Now,
-                            Address = RemoteEndPoint
+                            EndPoint = RemoteEndPoint,
+                            Type = PacketType.Tcp
                         };
 
                         OnOnPacketRecived(recivedPacket);
@@ -139,7 +140,7 @@ namespace NetworkModules.Connection.Connections
 
         private void Reset()
         {
-            _infoBuffer = new byte[3];
+            _infoBuffer = new byte[PacketBuilder.IndexserSize];
             _rxLength = 0; 
         }
 
@@ -150,18 +151,19 @@ namespace NetworkModules.Connection.Connections
 
         public void Send(NetworkPacket Packet)
         {
+            if (Status == ConnectionStatus.Disconnected)
+                return;
+            byte[] packet = Packet.FullPacket;
+
             try
             {
                 lock (_toBeSend)
                 {
-                    if (Status == ConnectionStatus.Disconnected)
-                        return;
                     if (Status == ConnectionStatus.Connecting)
                         _toBeSend.Add(Packet);
 
                     if (Status == ConnectionStatus.Connected)
                     {
-                        byte[] packet = Packet.Packet;
                         _client.GetStream().BeginWrite(packet, 0, packet.Length, AsyncSendComplete, null);
                     }
                 }

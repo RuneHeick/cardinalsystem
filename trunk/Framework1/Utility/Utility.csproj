@@ -39,6 +39,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BiDictionary.cs" />
     <Compile Include="Crc16.cs" />
     <Compile Include="Crc32.cs" />
     <Compile Include="IPendPointEqualityComparer.cs" />

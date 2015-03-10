@@ -5,7 +5,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using NetworkModules.Connection.Connector;
-using Server3.Intercom.Network.Packets;
+using NetworkModules.Connection.Packet;
 
 namespace NetworkModules.Connection.Connections
 {
