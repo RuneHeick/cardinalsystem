@@ -1,5 +1,6 @@
 ﻿using System;
-using Server3.Intercom.Network.Packets;
+using NetworkModules.Connection.Helpers;
+using NetworkModules.Connection.Packet;
 
 namespace NetworkModules.Connection.Connector
 {

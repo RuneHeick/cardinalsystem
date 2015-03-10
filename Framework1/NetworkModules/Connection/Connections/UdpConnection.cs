@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 using NetworkModules.Connection.Connector;
-using Server3.Intercom.Network.Packets;
+using NetworkModules.Connection.Packet;
 
 namespace NetworkModules.Connection.Connections
 {
@@ -21,10 +17,11 @@ namespace NetworkModules.Connection.Connections
 
         internal void AddPacket(byte[] packetBytes)
         {
-            NetworkPacket packet = new NetworkPacket(packetBytes, this, PacketType.Udp)
+            NetworkPacket packet = new NetworkPacket(packetBytes, PacketBuilder.IndexserSize)
             {
                 TimeStamp = DateTime.Now,
-                Address = RemoteEndPoint
+                EndPoint = RemoteEndPoint,
+                Type =PacketType.Udp
             };
             OnOnPacketRecived(packet);
         }
@@ -36,7 +33,7 @@ namespace NetworkModules.Connection.Connections
 
         public void Send(NetworkPacket packet)
         {
-            uDPConnector.Send(packet.Packet, packet.Address); 
+            uDPConnector.Send(packet.FullPacket, packet.EndPoint); 
         }
 
         public void Close()

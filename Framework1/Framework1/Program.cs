@@ -9,7 +9,7 @@ using FileModules;
 using FileModules.Event;
 using NetworkModules.Connection;
 using NetworkModules.Connection.Connector;
-using Server3.Intercom.Network.Packets;
+using NetworkModules.Connection.Packet;
 
 namespace Framework1
 {
@@ -29,20 +29,22 @@ namespace Framework1
             s1.Value = "Hop";
 
 
-            ConnectionManager RemoteManager = new ConnectionManager(new IPEndPoint(IPAddress.Loopback, 5000));
-            ConnectionManager conManager = new ConnectionManager(new IPEndPoint(IPAddress.Loopback, 5050));
+            CommandCollection cmdCollection = new CommandCollection();
+            NetworkPacket.SetCommandCollection(cmdCollection);
+            ConnectionManager RemoteManager = new ConnectionManager(new IPEndPoint(IPAddress.Loopback, 9000));
+            ConnectionManager conManager = new ConnectionManager(new IPEndPoint(IPAddress.Loopback, 9090));
 
             RemoteManager.RemoteConnectionCreated += NewConnection; 
 
 
-            Connection connection = conManager.GetConnection(new IPEndPoint(IPAddress.Loopback, 5000)); 
+            Connection connection = conManager.GetConnection(new IPEndPoint(IPAddress.Loopback, 9000)); 
             connection.OnStatusChanged += StatusChanged;
 
             Thread.Sleep(100);
 
             
 
-            connection.Send(new NetworkPacket(10,PacketType.Udp));
+            connection.Send(new NetworkPacket());
 
             Thread.Sleep(100);
 

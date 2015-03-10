@@ -3,7 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using NetworkModules.Connection.Connections;
 using NetworkModules.Connection.Connector;
-using Server3.Intercom.Network.Packets;
+using NetworkModules.Connection.Packet;
 
 namespace NetworkModules.Connection
 {
@@ -102,7 +102,7 @@ namespace NetworkModules.Connection
             {
                 if (_tcpConnection == null || _tcpConnection.Status == ConnectionStatus.Disconnected)
                     AddTcp(_manager.TcpConnector.CreateConnection(RemoteEndPoint));
-                packet.Address = RemoteEndPoint;
+                packet.EndPoint = RemoteEndPoint;
                 _tcpConnection.Send(packet);
             }
         }
@@ -113,7 +113,7 @@ namespace NetworkModules.Connection
             {
                 if (_udpConnection == null)
                     _udpConnection = _manager.UdpConnector.GetConnection(RemoteEndPoint);
-                packet.Address = RemoteEndPoint;
+                packet.EndPoint = RemoteEndPoint;
                 _udpConnection.Send(packet);
             }
         }
