@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace NetworkModules.Connection.Packet
 {
@@ -8,6 +9,11 @@ namespace NetworkModules.Connection.Packet
     {
         private readonly Dictionary<byte, ICommandId> _commandsDictionary = new Dictionary<byte, ICommandId>();
         private static readonly ICommandId UndefinedId = new CommandId<PacketElement>(CommandId <PacketElement>.Dynamic, "Undefined Command", 0);
+
+        public CommandCollection()
+        {
+            GetAll();
+        }
 
         public ICommandId GetCommandId(byte id)
         {
@@ -31,12 +37,12 @@ namespace NetworkModules.Connection.Packet
             return UndefinedId;
         }
 
-        public ICommandId GetOrCreateCommand(string description, int length)
+        public ICommandId CreateCommand(string description, int length)
         {
             return GetOrCreateCommand<PacketElement>(description, length);
         }
 
-        public ICommandId GetOrCreateCommand<T>(string description, int length) where T: PacketElement, new()
+        public ICommandId GetOrCreateCommand<T>(string description, int length) where T: IPacketElement, new()
         {
             lock (_commandsDictionary)
             {
@@ -49,6 +55,7 @@ namespace NetworkModules.Connection.Packet
                     if (!_commandsDictionary.ContainsKey(id))
                     {
                         ICommandId com = new CommandId<T>(length, description, id);
+                        _commandsDictionary.Add(id, com); 
                         return com; 
                     }
                 }
@@ -57,9 +64,35 @@ namespace NetworkModules.Connection.Packet
             }
         }
 
+
+        public void GetAll()
+        {
+            var type = typeof (IPacketElement);
+            var types = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(s => s.GetTypes())
+                .Where(p => type.IsAssignableFrom(p) && !p.IsInterface);
+            var list = types.ToList();
+            foreach (var item in list)
+            {
+                try
+                {
+                    MethodInfo method = typeof (CommandCollection).GetMethod("GetOrCreateCommand");
+                    MethodInfo generic = method.MakeGenericMethod(item);
+
+                    IPacketElement instance = (IPacketElement) Activator.CreateInstance(item);
+
+                    generic.Invoke(this, new object[] { item.Name, (instance.IsFixedSize ? instance.Length : CommandId<PacketElement>.Dynamic) });
+                }
+                catch (Exception e)
+                {
+                    // ignored
+                }
+            }
+        }
+
     }
 
-    public class CommandId<T>: ICommandId where T : PacketElement, new()
+    public class CommandId<T>: ICommandId where T : IPacketElement, new()
     {
         public CommandId(int length, string description, byte command)
         {
@@ -74,7 +107,7 @@ namespace NetworkModules.Connection.Packet
 
         public int Length { get; private set;  }
 
-        public PacketElement CreateElement()
+        public IPacketElement CreateElement()
         {
             return new T();
         }

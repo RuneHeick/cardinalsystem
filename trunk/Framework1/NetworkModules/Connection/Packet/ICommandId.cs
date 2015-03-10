@@ -8,7 +8,8 @@
 
         int Length { get; }
 
-        PacketElement CreateElement();
+        IPacketElement CreateElement();
+
     }
 
 }

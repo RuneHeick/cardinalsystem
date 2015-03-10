@@ -52,6 +52,11 @@
     <Compile Include="Connection\Packet\NetworkPacket.cs" />
     <Compile Include="Connection\Packet\PacketBuilder.cs" />
     <Compile Include="Connection\Packet\PacketElement.cs" />
+    <Compile Include="Connection\Packet\IPacketElement.cs" />
+    <Compile Include="DataCentricSocket\CommandSocket.cs" />
+    <Compile Include="DataCentricSocket\CommandSocketManager.cs" />
+    <Compile Include="DataCentricSocket\Elements\SocketCreate.cs" />
+    <Compile Include="DataCentricSocket\Elements\SocketHeader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -60,6 +65,7 @@
       <Name>Utility</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

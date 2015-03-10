@@ -7,10 +7,9 @@ namespace NetworkModules.Connection.Packet
 {
     class PacketBuilder
     {
-        public const int IndexserSize = 2;
         public const int MaxPacketSize = 0x0000ffff; 
 
-        private readonly List<PacketElement> _elements = new List<PacketElement>();
+        private readonly List<IPacketElement> _elements = new List<IPacketElement>();
         private readonly CommandCollection _commandCollection; 
 
         private readonly object _syncRoot = new object();
@@ -21,15 +20,18 @@ namespace NetworkModules.Connection.Packet
             _commandCollection = commandCollection;
         }
 
-        public ReadOnlyCollection<PacketElement> Elements
+        public ReadOnlyCollection<IPacketElement> Elements
         {
             get { return _elements.AsReadOnly(); }
         }
 
-        public void Add(PacketElement element)
+        public void Add(IPacketElement element)
         {
             lock (_syncRoot)
             {
+                if (element.Type == null)
+                    element.Type = _commandCollection.GetCommandId(element.GetType().Name);
+
                 if (element.IsFixedSize)
                     _elements.Insert(0, element);
                 else
@@ -42,7 +44,7 @@ namespace NetworkModules.Connection.Packet
             }
         }
 
-        public void Remove(PacketElement element)
+        public void Remove(IPacketElement element)
         {
             lock (_syncRoot)
             {
@@ -60,16 +62,25 @@ namespace NetworkModules.Connection.Packet
 
                 int dataLength = _elements.Sum((o) => o.Length);
                 var elementsCount = _elements.Count;
-                var packetLength = IndexserSize + (elementsCount - 1) + dataLength;
+                var packetLength = elementsCount + dataLength;
 
                 if (packetLength > MaxPacketSize)
                     throw new IndexOutOfRangeException("Packet longer than 32768 bytes");
-                
-                if(_packetContainer == null || _packetContainer.Length != packetLength)
-                    _packetContainer = new byte[packetLength];
 
-                _packetContainer[1] = (byte)packetLength;
-                _packetContainer[0] = (byte)(packetLength >> 8);
+                int IndexserSize = packetLength > 0x7f ? 2 : 1;
+
+                if(_packetContainer == null || _packetContainer.Length != (packetLength+IndexserSize))
+                    _packetContainer = new byte[packetLength + IndexserSize];
+
+                if (IndexserSize > 1)
+                {
+                    _packetContainer[1] = (byte) packetLength;
+                    _packetContainer[0] = (byte)((packetLength>>8) | 0x80);
+                }
+                else
+                {
+                    _packetContainer[0] = (byte)packetLength;
+                }
 
                 int rxIndex = IndexserSize;
                 for (int i = 0; i < _elements.Count; i++)
@@ -86,28 +97,28 @@ namespace NetworkModules.Connection.Packet
 
         internal static int GetPacketLength(byte[] packetPart)
         {
-            return packetPart[1] + ((packetPart[0]) << 8);
+            int ret = packetPart[1] + ((int)(packetPart[0] << 8) & 0x7F00);
+            return ret;
         }
 
-        public List<PacketElement> DecomposePacket(byte[] payload, int startIndex)
+        public List<IPacketElement> DecomposePacket(byte[] payload, int startIndex)
         {
-            List<PacketElement> elements = new List<PacketElement>();
+            List<IPacketElement> elements = new List<IPacketElement>();
 
             for (int i = startIndex; i < payload.Length; i++)
             {
                 ICommandId command = _commandCollection.GetCommandId(payload[i]);
                 int length = 0;
                 if (command.Length == CommandId<PacketElement>.Dynamic)
-                    length = (i + 1) - payload.Length;
+                    length = (payload.Length) - (i+1);
                 else
                     length = command.Length;
 
                 byte[] data = new byte[length];
                 Array.Copy(payload,(i+1),data,0,length);
 
-                PacketElement element = command.CreateElement();
+                IPacketElement element = command.CreateElement();
                 element.Data = data;
-                element.IsFixedSize = (command.Length != CommandId<PacketElement>.Dynamic);
                 element.Type = command;
 
                 elements.Add(element);
