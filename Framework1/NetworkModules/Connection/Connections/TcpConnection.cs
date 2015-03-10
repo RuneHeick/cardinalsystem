@@ -72,19 +72,51 @@ namespace NetworkModules.Connection.Connections
 
         private void StartRead()
         {
-            _client.GetStream().BeginRead(_infoBuffer, 0, _infoBuffer.Length, AsyncInfoReadComplete, null);
+            _client.GetStream().BeginRead(_infoBuffer, 0, 1, AsyncInfoOneReadComplete, null);
         }
 
-        private void AsyncInfoReadComplete(IAsyncResult ar)
+        private void AsyncInfoOneReadComplete(IAsyncResult ar)
         {
             try
             {
                 int len = _client.GetStream().EndRead(ar);
-                if (len == _infoBuffer.Length)
+                if (len == 1)
+                {
+                    if ((_infoBuffer[0] & 0x80) > 0)
+                    {
+                        _client.GetStream().BeginRead(_infoBuffer, 1, 1, AsyncInfoTwoReadComplete, null);
+                    }
+                    else
+                    {
+                        _infoBuffer[1] = _infoBuffer[0];
+                        _infoBuffer[0] = 0;
+                        int packetLen = PacketBuilder.GetPacketLength(_infoBuffer);
+                        _packetBuffer = new byte[packetLen];
+                        _rxLength = 0;
+                        _client.GetStream().BeginRead(_packetBuffer, 0, packetLen, AsyncPacketReadComplete, null);   
+                    }
+                }
+                else
+                {
+                    Status = ConnectionStatus.Disconnected;
+                }
+            }
+            catch (Exception e)
+            {
+                Status = ConnectionStatus.Disconnected;
+            }
+        }
+
+        private void AsyncInfoTwoReadComplete(IAsyncResult ar)
+        {
+            try
+            {
+                int len = _client.GetStream().EndRead(ar);
+                if (len == 1)
                 {
                     int packetLen = PacketBuilder.GetPacketLength(_infoBuffer);
                     _packetBuffer = new byte[packetLen];
-                    _rxLength = 0; 
+                    _rxLength = 0;
                     _client.GetStream().BeginRead(_packetBuffer, 0, packetLen, AsyncPacketReadComplete, null);
                 }
                 else
@@ -140,7 +172,7 @@ namespace NetworkModules.Connection.Connections
 
         private void Reset()
         {
-            _infoBuffer = new byte[PacketBuilder.IndexserSize];
+            _infoBuffer = new byte[2];
             _rxLength = 0; 
         }
 

@@ -31,6 +31,7 @@ namespace Framework1
 
             CommandCollection cmdCollection = new CommandCollection();
             NetworkPacket.SetCommandCollection(cmdCollection);
+
             ConnectionManager RemoteManager = new ConnectionManager(new IPEndPoint(IPAddress.Loopback, 9000));
             ConnectionManager conManager = new ConnectionManager(new IPEndPoint(IPAddress.Loopback, 9090));
 
@@ -42,11 +43,21 @@ namespace Framework1
 
             Thread.Sleep(100);
 
+            var packet1 = new NetworkPacket();
+            var packet2 = new NetworkPacket();
+
+            var command1 = cmdCollection.CreateCommand("TestDy", 0);
+            var command2 = cmdCollection.CreateCommand("TestFi", 2);
+            
+            var element1 = new PacketElement(new byte[127], command1);
+            var element2 = new PacketElement(new byte[2] { 3, 4 }, command2);
+
+            packet1.Add(element1); 
             
 
-            connection.Send(new NetworkPacket());
+            connection.Send(packet1);
 
-            Thread.Sleep(100);
+            Thread.Sleep(1000);
 
             connection.Close();
 

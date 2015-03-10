@@ -14,7 +14,7 @@ namespace NetworkModules.Connection.Packet
             if(_cmdCollection == null)
                 throw new NotSupportedException("CommandCollection must be set first");
             _builder = new PacketBuilder(_cmdCollection);
-            Elements = new List<PacketElement>();
+            Elements = new List<IPacketElement>();
             Type = PacketType.Tcp;
         }
 
@@ -23,15 +23,15 @@ namespace NetworkModules.Connection.Packet
             Elements = _builder.DecomposePacket(payload, startindex); 
         }
 
-        public List<PacketElement> Elements { get; private set; }  
+        public List<IPacketElement> Elements { get; private set; }  
 
-        public void Add(PacketElement element)
+        public void Add(IPacketElement element)
         {
             _builder.Add(element);
             Elements.Add(element);
         }
 
-        public void Remove(PacketElement element)
+        public void Remove(IPacketElement element)
         {
             _builder.Remove(element);
             Elements.Remove(element);

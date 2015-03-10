@@ -17,7 +17,8 @@ namespace NetworkModules.Connection.Connections
 
         internal void AddPacket(byte[] packetBytes)
         {
-            NetworkPacket packet = new NetworkPacket(packetBytes, PacketBuilder.IndexserSize)
+            var startid = (packetBytes[0] & 0x80) > 0 ? 2 : 1;
+            NetworkPacket packet = new NetworkPacket(packetBytes, startid)
             {
                 TimeStamp = DateTime.Now,
                 EndPoint = RemoteEndPoint,
