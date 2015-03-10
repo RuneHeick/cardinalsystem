@@ -64,7 +64,7 @@ namespace NetworkModules.Connection.Packet
 
                 if (packetLength > MaxPacketSize)
                     throw new IndexOutOfRangeException("Packet longer than 32768 bytes");
-
+                
                 if(_packetContainer == null || _packetContainer.Length != packetLength)
                     _packetContainer = new byte[packetLength];
 
