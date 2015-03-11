@@ -47,12 +47,14 @@
     <Compile Include="Connection\Helper\Eventhanlder.cs" />
     <Compile Include="Connection\Connector\TCPConnector.cs" />
     <Compile Include="Connection\Connector\UDPConnector.cs" />
-    <Compile Include="Connection\Packet\CommandCollection.cs" />
-    <Compile Include="Connection\Packet\ICommandId.cs" />
+    <Compile Include="Connection\Packet\Commands\CommandCollection.cs" />
+    <Compile Include="Connection\Packet\Commands\ICommandId.cs" />
     <Compile Include="Connection\Packet\NetworkPacket.cs" />
     <Compile Include="Connection\Packet\PacketBuilder.cs" />
-    <Compile Include="Connection\Packet\PacketElement.cs" />
-    <Compile Include="Connection\Packet\IPacketElement.cs" />
+    <Compile Include="Connection\Packet\Element\PacketElement.cs" />
+    <Compile Include="Connection\Packet\Element\Size.cs" />
+    <Compile Include="Connection\Protocol\Protocol.cs" />
+    <Compile Include="Connection\Protocol\ProtocolManager.cs" />
     <Compile Include="DataCentricSocket\CommandSocket.cs" />
     <Compile Include="DataCentricSocket\CommandSocketManager.cs" />
     <Compile Include="DataCentricSocket\Elements\SocketCreate.cs" />
@@ -65,7 +67,9 @@
       <Name>Utility</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Connection\NetworkUnit\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

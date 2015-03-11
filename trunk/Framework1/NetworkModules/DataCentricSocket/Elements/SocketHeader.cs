@@ -4,10 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NetworkModules.Connection.Packet;
+using NetworkModules.Connection.Packet.Commands;
 
 namespace NetworkModules.DataCentricSocket.Elements
 {
-    public class SocketHeader : IPacketElement
+    public class SocketHeader : PacketElement
     {
         public SocketHeader()
         {
@@ -18,40 +19,14 @@ namespace NetworkModules.DataCentricSocket.Elements
             get { return Data[0]; }
             set
             {
-                if (Data == null)
-                    CreateData();
-                Data[0] = value;
+                if (Data != null)
+                    Data[0] = value;
             }
         }
 
-        private void CreateData()
+        public override Size ExpectedSize
         {
-            Data = new byte[1];
-        }
-
-
-        public ICommandId Type { get; set; } // will be auto assigned; 
-
-        public byte[] Data
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        public int Length
-        {
-            get { return 1; }
-        }
-
-        public bool IsFixedSize
-        {
-            get { return true; }
+            get { return 4; }
         }
     }
 }
