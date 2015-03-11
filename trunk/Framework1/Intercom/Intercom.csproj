@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{F0D8F61C-743F-45EB-B3C5-B1935480071D}</ProjectGuid>
+    <ProjectGuid>{1F8A006E-7E9C-40BA-B918-1F4AFDB4FEE6}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>NetworkModules</RootNamespace>
-    <AssemblyName>NetworkModules</AssemblyName>
+    <RootNamespace>Intercom</RootNamespace>
+    <AssemblyName>Intercom</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -39,35 +39,30 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Connection\ConnectionManager.cs" />
-    <Compile Include="Connection\Connections\IConnection.cs" />
-    <Compile Include="Connection\Connections\TcpConnection.cs" />
-    <Compile Include="Connection\Connections\UdpConnection.cs" />
-    <Compile Include="Connection\Connection.cs" />
-    <Compile Include="Connection\Helper\Eventhanlder.cs" />
-    <Compile Include="Connection\Connector\TCPConnector.cs" />
-    <Compile Include="Connection\Connector\UDPConnector.cs" />
-    <Compile Include="Connection\Packet\Commands\CommandCollection.cs" />
-    <Compile Include="Connection\Packet\Commands\ICommandId.cs" />
-    <Compile Include="Connection\Packet\NetworkPacket.cs" />
-    <Compile Include="Connection\Packet\PacketBuilder.cs" />
-    <Compile Include="Connection\Packet\Element\PacketElement.cs" />
-    <Compile Include="Connection\Packet\Element\Size.cs" />
-    <Compile Include="Connection\Protocol\Protocol.cs" />
-    <Compile Include="Connection\Protocol\ProtocolManager.cs" />
-    <Compile Include="DataCentricSocket\CommandSocket.cs" />
-    <Compile Include="DataCentricSocket\CommandSocketManager.cs" />
-    <Compile Include="DataCentricSocket\Elements\SocketCreate.cs" />
-    <Compile Include="DataCentricSocket\Elements\SocketHeader.cs" />
+    <Compile Include="Modules\INetworkModule.cs" />
+    <Compile Include="Modules\MasterModule.cs" />
+    <Compile Include="NetworkModule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Modules\SlaveModule.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\BaseInterfaces\BaseInterfaces.csproj">
+      <Project>{e0bb986f-fe55-4099-90a1-ac653916e186}</Project>
+      <Name>BaseInterfaces</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\FileModules\FileModules.csproj">
+      <Project>{27097752-cfd4-4a60-815b-9fc14866e9be}</Project>
+      <Name>FileModules</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NetworkModules\NetworkModules.csproj">
+      <Project>{f0d8f61c-743f-45eb-b3c5-b1935480071d}</Project>
+      <Name>NetworkModules</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Utility\Utility.csproj">
       <Project>{bbb49800-84e8-42ff-903b-dede03c5fbd3}</Project>
       <Name>Utility</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

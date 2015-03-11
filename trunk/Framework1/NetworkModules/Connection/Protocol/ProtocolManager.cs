@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using NetworkModules.Connection.Connector;
 using NetworkModules.Connection.Packet;
 
-namespace NetworkModules.Connection.Protocol
+namespace NetworkModules.Connection
 {
     class ProtocolManager
     {
@@ -42,6 +42,22 @@ namespace NetworkModules.Connection.Protocol
         }
 
 
+        public void Add(Protocol protocol)
+        {
+            lock (_protocols)
+            {
+                if(!_protocols.Contains(protocol))
+                    _protocols.Add(protocol);
+            }
+        }
+
+        public void Remove(Protocol protocol)
+        {
+            lock (_protocols)
+            {
+                _protocols.Remove(protocol);
+            }
+        }
 
     }
 }

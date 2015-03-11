@@ -100,6 +100,9 @@ namespace NetworkModules.Connection.Packet
             for (int i = startIndex; i < payload.Length; i++)
             {
                 PacketElement element = CommandCollection.Instance.CreateElement(payload[i]);
+                if (element == null)
+                    break;
+                
                 int length = 0;
                 if (element.ExpectedSize == Size.Dynamic)
                     length = (payload.Length) - (i+1);
