@@ -4,10 +4,11 @@ using System.Net.Sockets;
 using NetworkModules.Connection.Connections;
 using NetworkModules.Connection.Connector;
 using NetworkModules.Connection.Packet;
+using NetworkModules.Connection.Protocol;
 
 namespace NetworkModules.Connection
 {
-    public class Connection:IConnection
+    public class Connection
     {
         private  TcpConnection _tcpConnection = null;
         private  UdpConnection _udpConnection = null;
@@ -17,6 +18,8 @@ namespace NetworkModules.Connection
         private readonly object _udpLock = new object();
 
         public IPEndPoint RemoteEndPoint { get; internal set; }
+
+        private ProtocolManager Protocols { get; set; }
 
         public PacketType Supported
         {
@@ -41,25 +44,34 @@ namespace NetworkModules.Connection
                 if (_status != value)
                 {
                     _status = value;
-                    StatusChanged(value);
+                    FireOnStatusChanged(value);
                 }
             }
         }
         
         internal Connection(TcpConnection tcpConnection, UdpConnection udpConnection, ConnectionManager manager)
         {
+            _manager = manager;
             RemoteEndPoint = udpConnection.RemoteEndPoint; 
+            Setup();
+  
             AddTcp(tcpConnection);
             AddUdp(udpConnection);
-            _manager = manager;
+            
         }
-
 
         internal Connection(ConnectionManager manager, IPEndPoint remoteEndPoint)
         {
-            RemoteEndPoint = remoteEndPoint; 
             _manager = manager;
+            RemoteEndPoint = remoteEndPoint; 
+            Setup();
         }
+
+        public void Setup()
+        {
+            Protocols = new ProtocolManager();
+        }
+
 
         public void Send(NetworkPacket packet)
         {
@@ -85,15 +97,10 @@ namespace NetworkModules.Connection
             lock (_udpLock)
                 if (_udpConnection != null)
                 {
-                    _udpConnection.OnPacketRecived -= PacketRecived;
+                    _udpConnection.OnPacketRecived -= OnPacketRecived;
                     _udpConnection.Close();
                 }
                 
-        }
-
-        private void PacketRecived(object sender, PacketEventArgs e)
-        {
-            OnOnPacketRecived(e);
         }
 
         private void SendTcp(NetworkPacket packet)
@@ -128,10 +135,16 @@ namespace NetworkModules.Connection
                     _tcpConnection = connection;
                     Status = _tcpConnection.Status;
                     _tcpConnection.OnStatusChanged += TcpStatusChanged;
-                    _tcpConnection.OnPacketRecived += PacketRecived;
+                    _tcpConnection.OnPacketRecived += OnPacketRecived;
                 }
             }
         }
+
+        private void OnPacketRecived(object sender, PacketEventArgs e)
+        {
+            Protocols.PacketRecived(this,e.Packet);
+        }
+
 
         internal void AddUdp(UdpConnection connection)
         {
@@ -140,7 +153,7 @@ namespace NetworkModules.Connection
                 if (_udpConnection == null)
                 {
                     _udpConnection = connection;
-                    _udpConnection.OnPacketRecived += PacketRecived;
+                    _udpConnection.OnPacketRecived += OnPacketRecived;
                 }
             }
         }
@@ -152,7 +165,7 @@ namespace NetworkModules.Connection
                 if (e.Status == ConnectionStatus.Disconnected || e.Status == ConnectionStatus.Error)
                 {
                     _tcpConnection.OnStatusChanged -= TcpStatusChanged;
-                    _tcpConnection.OnPacketRecived -= PacketRecived;
+                    _tcpConnection.OnPacketRecived -= OnPacketRecived;
                     _tcpConnection = null;
                 }
                 Status = e.Status;
@@ -161,22 +174,6 @@ namespace NetworkModules.Connection
         }
 
         public event ConnectionHandler OnStatusChanged;
-
-        public event PacketHandler OnPacketRecived;
-
-        private void OnOnPacketRecived(PacketEventArgs e)
-        {
-            var handler = OnPacketRecived;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
-        }
-
-        private void StatusChanged(ConnectionStatus value)
-        {
-            FireOnStatusChanged(value);
-        }
 
         private void FireOnStatusChanged(ConnectionStatus status)
         {

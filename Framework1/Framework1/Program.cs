@@ -10,6 +10,7 @@ using FileModules.Event;
 using NetworkModules.Connection;
 using NetworkModules.Connection.Connector;
 using NetworkModules.Connection.Packet;
+using NetworkModules.Connection.Packet.Commands;
 
 namespace Framework1
 {
@@ -27,11 +28,7 @@ namespace Framework1
 
             s2.SettingChanged += SettingChangedHandler;
             s1.Value = "Hop";
-
-
-            CommandCollection cmdCollection = new CommandCollection();
-            NetworkPacket.SetCommandCollection(cmdCollection);
-
+            var a = CommandCollection.Instance; 
             ConnectionManager RemoteManager = new ConnectionManager(new IPEndPoint(IPAddress.Loopback, 9000));
             ConnectionManager conManager = new ConnectionManager(new IPEndPoint(IPAddress.Loopback, 9090));
 
@@ -42,7 +39,7 @@ namespace Framework1
             connection.OnStatusChanged += StatusChanged;
 
             Thread.Sleep(100);
-
+            /*
             var packet1 = new NetworkPacket();
             var packet2 = new NetworkPacket();
 
@@ -56,18 +53,18 @@ namespace Framework1
             
 
             connection.Send(packet1);
-
+            */
             Thread.Sleep(1000);
 
-            connection.Close();
+            
 
             Console.ReadKey();
+            connection.Close();
         }
 
         private static void NewConnection(object sender, ConnectionEventArgs<Connection> e)
         {
             e.Connection.OnStatusChanged += StatusChanged;
-            e.Connection.OnPacketRecived += PacketRecived;
         }
 
         private static void PacketRecived(object sender, PacketEventArgs e)

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using NetworkModules.Connection.Packet.Commands;
 
 namespace NetworkModules.Connection.Packet
 {
@@ -9,34 +10,25 @@ namespace NetworkModules.Connection.Packet
     {
         public const int MaxPacketSize = 0x0000ffff; 
 
-        private readonly List<IPacketElement> _elements = new List<IPacketElement>();
-        private readonly CommandCollection _commandCollection; 
+        private readonly List<PacketElement> _elements = new List<PacketElement>();
 
         private readonly object _syncRoot = new object();
         private byte[] _packetContainer = null;
 
-        public PacketBuilder(CommandCollection commandCollection)
-        {
-            _commandCollection = commandCollection;
-        }
-
-        public ReadOnlyCollection<IPacketElement> Elements
+        public ReadOnlyCollection<PacketElement> Elements
         {
             get { return _elements.AsReadOnly(); }
         }
 
-        public void Add(IPacketElement element)
+        public void Add(PacketElement element)
         {
             lock (_syncRoot)
             {
-                if (element.Type == null)
-                    element.Type = _commandCollection.GetCommandId(element.GetType().Name);
-
-                if (element.IsFixedSize)
+                if (!element.ExpectedSize.Equals(Size.Dynamic))
                     _elements.Insert(0, element);
                 else
                 {
-                    if (_elements.Count == 0 || _elements[_elements.Count - 1].IsFixedSize)
+                    if (_elements.Count == 0 || _elements[_elements.Count - 1].ExpectedSize != Size.Dynamic)
                         _elements.Add(element);
                     else
                         throw new InvalidOperationException("Only one dynamic packet can be in an element collection");
@@ -44,7 +36,7 @@ namespace NetworkModules.Connection.Packet
             }
         }
 
-        public void Remove(IPacketElement element)
+        public void Remove(PacketElement element)
         {
             lock (_syncRoot)
             {
@@ -85,7 +77,7 @@ namespace NetworkModules.Connection.Packet
                 int rxIndex = IndexserSize;
                 for (int i = 0; i < _elements.Count; i++)
                 {
-                    _packetContainer[rxIndex] = _elements[i].Type.Command;
+                    _packetContainer[rxIndex] = CommandCollection.Instance.GetCommand(_elements[i].GetType());
                     byte[] packetData = _elements[i].Data;
                     Array.Copy(packetData, 0, _packetContainer, rxIndex+1, packetData.Length);
                     rxIndex += packetData.Length + 1;
@@ -101,28 +93,25 @@ namespace NetworkModules.Connection.Packet
             return ret;
         }
 
-        public List<IPacketElement> DecomposePacket(byte[] payload, int startIndex)
+        public List<PacketElement> DecomposePacket(byte[] payload, int startIndex)
         {
-            List<IPacketElement> elements = new List<IPacketElement>();
+            List<PacketElement> elements = new List<PacketElement>();
 
             for (int i = startIndex; i < payload.Length; i++)
             {
-                ICommandId command = _commandCollection.GetCommandId(payload[i]);
+                PacketElement element = CommandCollection.Instance.CreateElement(payload[i]);
                 int length = 0;
-                if (command.Length == CommandId<PacketElement>.Dynamic)
+                if (element.ExpectedSize == Size.Dynamic)
                     length = (payload.Length) - (i+1);
                 else
-                    length = command.Length;
+                    length = element.ExpectedSize;
 
                 byte[] data = new byte[length];
                 Array.Copy(payload,(i+1),data,0,length);
 
-                IPacketElement element = command.CreateElement();
                 element.Data = data;
-                element.Type = command;
 
                 elements.Add(element);
-
                 i += length; 
             }
 
