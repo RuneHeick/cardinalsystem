@@ -43,6 +43,7 @@
     <Compile Include="Crc16.cs" />
     <Compile Include="Crc32.cs" />
     <Compile Include="IPendPointEqualityComparer.cs" />
+    <Compile Include="IPEndPointExstenstion.cs" />
     <Compile Include="IPEqualityComparer.cs" />
     <Compile Include="IPRange.cs" />
     <Compile Include="MemberInfoGetting.cs" />

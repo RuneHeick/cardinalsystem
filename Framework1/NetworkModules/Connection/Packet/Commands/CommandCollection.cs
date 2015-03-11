@@ -29,7 +29,7 @@ namespace NetworkModules.Connection.Packet.Commands
 
         private CommandCollection()
         {
-            GetAll();
+
         }
 
         private ICommandId GetCommandId(string name)
@@ -44,19 +44,19 @@ namespace NetworkModules.Connection.Packet.Commands
             return null;
         }
 
-        private void GetOrCreateCommand<T>(string name) where T: PacketElement, new()
+        public void GetOrCreateCommand<T>() where T: PacketElement, new()
         {
             lock (_commandsDictionary)
             {
-                ICommandId command = GetCommandId(name);
+                ICommandId command = GetCommandId(typeof(T).Name);
                 if (null != command)
                     return;
 
-                for (byte id = (byte) _commandsDictionary.Count; id < 255; id++)
+                for (byte id = (byte) _commandsDictionary.Count; id < 254; id++)
                 {
                     if (!_commandsDictionary.ContainsKey(id))
                     {
-                        ICommandId com = new CommandId<T>(name, id);
+                        ICommandId com = new CommandId<T>(typeof(T).Name, id);
                         _commandsDictionary.Add(id, com); 
                         return; 
                     }
@@ -66,42 +66,60 @@ namespace NetworkModules.Connection.Packet.Commands
             }
         }
 
-        public void GetAll()
+        public void CreateProtocolDefinition()
         {
             var type = typeof (PacketElement);
             var types = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(s => s.GetTypes())
                 .Where(p => type.IsAssignableFrom(p) && !p.IsAbstract);
             var list = types.ToList();
+
+            MethodInfo method = typeof(CommandCollection).GetMethod("GetOrCreateCommand");
+
             foreach (var item in list)
             {
                 try
                 {
-                    MethodInfo method = typeof (CommandCollection).GetMethod("GetOrCreateCommand");
+                    
                     MethodInfo generic = method.MakeGenericMethod(item);
 
                     PacketElement instance = (PacketElement) Activator.CreateInstance(item);
 
-                    generic.Invoke(this, new object[] {item.Name});
+                    generic.Invoke(this, null);
                 }
                 catch (Exception e)
                 {
-                    // ignored
+                    throw new NotSupportedException("The Element "+item.Name+" Can not be created");
                 }
             }
         }
 
+        public void ResetCommands()
+        {
+            lock(_commandsDictionary)
+                _commandsDictionary.Clear();
+        }
 
         internal byte GetCommand(Type type)
         {
-            throw new NotImplementedException();
+            var id = GetCommandId(type.Name);
+            if (id == null)
+                return 255;
+            else
+                return id.Command;
         }
 
         public PacketElement CreateElement(byte b)
         {
-            throw new NotImplementedException();
+            lock (_commandsDictionary)
+            {
+                if (_commandsDictionary.ContainsKey(b))
+                {
+                    return _commandsDictionary[b].CreateElement();
+                }
+            }
+            return null;
         }
-
 
         private class CommandId<T> : ICommandId where T : PacketElement, new()
         {
@@ -125,8 +143,6 @@ namespace NetworkModules.Connection.Packet.Commands
                 get { return typeof (T); }
             }
         }
-
-
 
     }
  

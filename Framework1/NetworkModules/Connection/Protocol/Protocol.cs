@@ -5,11 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using NetworkModules.Connection.Packet;
 
-namespace NetworkModules.Connection.Protocol
+namespace NetworkModules.Connection
 {
     public abstract class Protocol
     {
-        public abstract List<Type> ElementTypes { get; }
+        public abstract List<Type> ElementTypes { get; protected set; }
 
         public abstract void HandlePacket(Connection from , NetworkPacket networkPacket);
 

@@ -4,7 +4,6 @@ using System.Net.Sockets;
 using NetworkModules.Connection.Connections;
 using NetworkModules.Connection.Connector;
 using NetworkModules.Connection.Packet;
-using NetworkModules.Connection.Protocol;
 
 namespace NetworkModules.Connection
 {
@@ -67,12 +66,35 @@ namespace NetworkModules.Connection
             Setup();
         }
 
+        ~Connection()
+        {
+            Close();
+        }
+
         public void Setup()
         {
             Protocols = new ProtocolManager();
         }
 
+        #region Protocol 
+        public void Add(Protocol protocol)
+        {
+            Protocols.Add(protocol);
+        }
 
+        public void Remove(Protocol protocol)
+        {
+                Protocols.Remove(protocol);
+        }
+
+        private void OnPacketRecived(object sender, PacketEventArgs e)
+        {
+            Protocols.PacketRecived(this, e.Packet);
+        }
+
+        #endregion
+
+        #region SocketOperations
         public void Send(NetworkPacket packet)
         {
             switch (packet.Type)
@@ -125,6 +147,9 @@ namespace NetworkModules.Connection
             }
         }
 
+        #endregion
+
+        #region AddSocket
         internal void AddTcp(TcpConnection connection)
         {
             lock (_tcpLock)
@@ -139,12 +164,6 @@ namespace NetworkModules.Connection
                 }
             }
         }
-
-        private void OnPacketRecived(object sender, PacketEventArgs e)
-        {
-            Protocols.PacketRecived(this,e.Packet);
-        }
-
 
         internal void AddUdp(UdpConnection connection)
         {
@@ -172,6 +191,8 @@ namespace NetworkModules.Connection
             }
 
         }
+
+        #endregion
 
         public event ConnectionHandler OnStatusChanged;
 

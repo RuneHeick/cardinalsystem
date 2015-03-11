@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetworkModules", "NetworkMo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utility", "Utility\Utility.csproj", "{BBB49800-84E8-42FF-903B-DEDE03C5FBD3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Intercom", "Intercom\Intercom.csproj", "{1F8A006E-7E9C-40BA-B918-1F4AFDB4FEE6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{BBB49800-84E8-42FF-903B-DEDE03C5FBD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BBB49800-84E8-42FF-903B-DEDE03C5FBD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BBB49800-84E8-42FF-903B-DEDE03C5FBD3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F8A006E-7E9C-40BA-B918-1F4AFDB4FEE6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F8A006E-7E9C-40BA-B918-1F4AFDB4FEE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F8A006E-7E9C-40BA-B918-1F4AFDB4FEE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F8A006E-7E9C-40BA-B918-1F4AFDB4FEE6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -19,6 +19,7 @@ namespace Framework1
         static void Main(string[] args)
         {
 
+            /*
             ISettingManager manager = new SettingManager("Settings.txt");
 
             var s1 = manager.GetOrCreateSetting("Test", "Start", "Hest");
@@ -28,7 +29,11 @@ namespace Framework1
 
             s2.SettingChanged += SettingChangedHandler;
             s1.Value = "Hop";
-            var a = CommandCollection.Instance; 
+            */
+
+
+            CommandCollection.Instance.CreateProtocolDefinition(); 
+
             ConnectionManager RemoteManager = new ConnectionManager(new IPEndPoint(IPAddress.Loopback, 9000));
             ConnectionManager conManager = new ConnectionManager(new IPEndPoint(IPAddress.Loopback, 9090));
 
@@ -39,21 +44,15 @@ namespace Framework1
             connection.OnStatusChanged += StatusChanged;
 
             Thread.Sleep(100);
-            /*
+
             var packet1 = new NetworkPacket();
-            var packet2 = new NetworkPacket();
-
-            var command1 = cmdCollection.CreateCommand("TestDy", 0);
-            var command2 = cmdCollection.CreateCommand("TestFi", 2);
-            
-            var element1 = new PacketElement(new byte[127], command1);
-            var element2 = new PacketElement(new byte[2] { 3, 4 }, command2);
-
+            var element1 = new DummyElement() {Data = new byte[] {1, 2, 3, 4}};
+            packet1.Add(element1);
+            packet1.Add(element1);
             packet1.Add(element1); 
-            
 
             connection.Send(packet1);
-            */
+
             Thread.Sleep(1000);
 
             
@@ -65,23 +64,18 @@ namespace Framework1
         private static void NewConnection(object sender, ConnectionEventArgs<Connection> e)
         {
             e.Connection.OnStatusChanged += StatusChanged;
-        }
-
-        private static void PacketRecived(object sender, PacketEventArgs e)
-        {
-            
+            e.Connection.Add(new DummyProtocol(typeof(DummyElement)));
         }
 
         private static void StatusChanged(object sender, ConnectionEventArgs e)
         {
             Connection con = (Connection) (sender); 
-            Console.WriteLine("Setting Changed of "+ con.RemoteEndPoint+" to: "+e.Status.ToString());
+            Console.WriteLine("Status Changed of "+ con.RemoteEndPoint+" to: "+e.Status.ToString());
         }
 
         private static void SettingChangedHandler(object sender, SettingEventArgs<int> e)
         {
             var s = e.Setting;
-
         }
     }
 }
