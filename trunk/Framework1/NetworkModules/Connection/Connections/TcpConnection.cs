@@ -4,10 +4,12 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using NetworkModules.Connection.Connector;
 using NetworkModules.Connection.Helpers;
 using NetworkModules.Connection.Packet;
+using Server.InterCom;
 
 namespace NetworkModules.Connection.Connections
 {
@@ -16,12 +18,17 @@ namespace NetworkModules.Connection.Connections
         private readonly TcpClient _client;
         private ConnectionStatus _status = ConnectionStatus.Disconnected;
         private readonly List<NetworkPacket> _toBeSend = new List<NetworkPacket>(3);
-        private readonly object _statusLock = new object(); 
+        private readonly object _statusLock = new object();
 
+
+        private readonly object _timerLock = new object();
+        private TimeOut _inactiveTimer; 
 
         private byte[] _infoBuffer;
         private byte[] _packetBuffer;
-        private int _rxLength = 0; 
+        private int _rxLength;
+
+        private bool _readStarted = false;
 
         public IPEndPoint RemoteEndPoint { get; private set; }
 
@@ -41,38 +48,51 @@ namespace NetworkModules.Connection.Connections
             }
         }
 
-        internal TcpConnection(TcpClient client, IPEndPoint remoteEndPoint)
+        internal TcpConnection(TcpClient client, IPEndPoint remoteEndPoint, int inactiveMaxTime)
         {
             _client = client;
+            if(inactiveMaxTime != Timeout.Infinite)
+                _inactiveTimer = TimeOut.Create((uint)inactiveMaxTime, this, ConnectionTimeOut);
             RemoteEndPoint = remoteEndPoint;
             Reset();
         }
 
-        private void StatusChanged(ConnectionStatus status)
+        #region InactiveTimerdel
+
+        private static void ConnectionTimeOut(TcpConnection obj)
         {
-            if (status == ConnectionStatus.Connected)
+            lock (obj._timerLock)
             {
-                StartRead();
-                SendQueue(); 
+                obj._inactiveTimer = null;
+                obj.Close();
             }
-            FireOnStatusChanged(status);
         }
 
-        private void SendQueue()
+        private void Kick()
         {
-            lock (_toBeSend)
-            {
-                foreach (var networkPacket in _toBeSend)
-                {
-                    Send(networkPacket);
-                }
-                _toBeSend.Clear();
-            }
+            lock(_timerLock)
+                if(_inactiveTimer != null)
+                    _inactiveTimer.Touch();
         }
+
+        private void Cancel()
+        {
+            lock (_timerLock)
+                if (_inactiveTimer != null)
+                    _inactiveTimer.Calcel();
+        }
+
+        #endregion 
+
+        #region Recive
 
         private void StartRead()
         {
-            _client.GetStream().BeginRead(_infoBuffer, 0, 1, AsyncInfoOneReadComplete, null);
+            if (_status == ConnectionStatus.Connected && !_readStarted && onPacketRecived != null)
+            {
+                _readStarted = true; 
+                _client.GetStream().BeginRead(_infoBuffer, 0, 1, AsyncInfoOneReadComplete, null);
+            }
         }
 
         private void AsyncInfoOneReadComplete(IAsyncResult ar)
@@ -93,7 +113,7 @@ namespace NetworkModules.Connection.Connections
                         int packetLen = PacketBuilder.GetPacketLength(_infoBuffer);
                         _packetBuffer = new byte[packetLen];
                         _rxLength = 0;
-                        _client.GetStream().BeginRead(_packetBuffer, 0, packetLen, AsyncPacketReadComplete, null);   
+                        _client.GetStream().BeginRead(_packetBuffer, 0, packetLen, AsyncPacketReadComplete, null);
                     }
                 }
                 else
@@ -142,16 +162,17 @@ namespace NetworkModules.Connection.Connections
                     {
                         var infoBuffer = _infoBuffer;
                         var packetBuffer = _packetBuffer;
+                        _readStarted = false; 
                         Reset();
                         StartRead();  //Start Reading before using thread to handle Packet. 
-                        
+
                         NetworkPacket recivedPacket = new NetworkPacket(packetBuffer, 0)
                         {
                             TimeStamp = DateTime.Now,
                             EndPoint = RemoteEndPoint,
                             Type = PacketType.Tcp
                         };
-
+                        Kick();
                         OnOnPacketRecived(recivedPacket);
                     }
                     else
@@ -170,19 +191,26 @@ namespace NetworkModules.Connection.Connections
             }
         }
 
-        private void Reset()
-        {
-            _infoBuffer = new byte[2];
-            _rxLength = 0; 
-        }
+        #endregion
 
-        public PacketType Supported
+
+        #region Send
+
+        private void SendQueue()
         {
-            get { return PacketType.Tcp; }
+            lock (_toBeSend)
+            {
+                foreach (var networkPacket in _toBeSend)
+                {
+                    Send(networkPacket);
+                }
+                _toBeSend.Clear();
+            }
         }
 
         public void Send(NetworkPacket Packet)
         {
+            Kick();
             if (Status == ConnectionStatus.Disconnected)
                 return;
             byte[] packet = Packet.FullPacket;
@@ -200,7 +228,7 @@ namespace NetworkModules.Connection.Connections
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 Status = ConnectionStatus.Disconnected;
             }
@@ -218,10 +246,44 @@ namespace NetworkModules.Connection.Connections
             }
         }
 
+
+        #endregion
+
+        private void StatusChanged(ConnectionStatus status)
+        {
+            switch(status)
+            {
+                case ConnectionStatus.Connected:
+                StartRead();
+                SendQueue(); 
+                Kick();
+                    break;
+                case ConnectionStatus.Disconnected:
+                case ConnectionStatus.Error:
+                    Cancel(); 
+                    break;
+            }
+
+            FireOnStatusChanged(status);
+        }
+
+        private void Reset()
+        {
+            _infoBuffer = new byte[2];
+            _rxLength = 0; 
+        }
+
+        public PacketType Supported
+        {
+            get { return PacketType.Tcp; }
+        }
+
+
         public void Close()
         {
             try
             {
+                Cancel();
                 if (_client.Client != null)
                 {
                     _client.Client.Close();
@@ -233,12 +295,22 @@ namespace NetworkModules.Connection.Connections
             }
         }
 
-        public event PacketHandler OnPacketRecived;
-      
+        private event PacketHandler onPacketRecived;
+        public event PacketHandler OnPacketRecived
+        {
+            add
+            {
+                onPacketRecived += value;
+                if(!_readStarted)
+                    StartRead();
+            }
+            remove { onPacketRecived -= value; }
+        }
+        
 
         private void OnOnPacketRecived(NetworkPacket packet)
         {
-            var handler = OnPacketRecived;
+            var handler = onPacketRecived;
             if (handler != null)
             {
                 PacketEventArgs e = new PacketEventArgs(packet);

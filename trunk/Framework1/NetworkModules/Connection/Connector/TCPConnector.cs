@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using NetworkModules.Connection.Connections;
 using NetworkModules.Connection.Connector;
 
@@ -49,7 +45,7 @@ namespace NetworkModules.Connection.Helpers
                 IPEndPoint connectionIpEndPoint = new IPEndPoint((ID.Socket.Client.RemoteEndPoint as IPEndPoint).Address,connectPort);
                 OnRemoteConnectionCreated(ID.Socket, connectionIpEndPoint); 
             }
-            catch (Exception)
+            catch (Exception e)
             {
             }
         }
@@ -60,7 +56,7 @@ namespace NetworkModules.Connection.Helpers
             var handler = _remoteConnectionCreated;
             if (handler != null)
             {
-                TcpConnection connection = new TcpConnection(client, connectSocket);
+                TcpConnection connection = new TcpConnection(client, connectSocket, Timeout.Infinite);
                 connection.Status = ConnectionStatus.Connected;
                 ConnectionEventArgs<TcpConnection> e = new ConnectionEventArgs<TcpConnection>(connection);
                 handler(this, e);
@@ -68,10 +64,10 @@ namespace NetworkModules.Connection.Helpers
         }
 
 
-        internal TcpConnection CreateConnection(IPEndPoint endPoint)
+        internal TcpConnection CreateConnection(IPEndPoint endPoint, int inactiveMaxTime)
         {
             var client = new TcpClient();
-            TcpConnection connection = new TcpConnection(client, endPoint);
+            TcpConnection connection = new TcpConnection(client, endPoint, inactiveMaxTime);
             connection.Status = ConnectionStatus.Connecting;
             client.BeginConnect(endPoint.Address, endPoint.Port, AsyncConnectionComplete,
                 new Tuple<TcpClient, TcpConnection>(client, connection));

@@ -58,6 +58,10 @@
       <Project>{27097752-cfd4-4a60-815b-9fc14866e9be}</Project>
       <Name>FileModules</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Intercom\Intercom.csproj">
+      <Project>{1f8a006e-7e9c-40ba-b918-1f4afdb4fee6}</Project>
+      <Name>Intercom</Name>
+    </ProjectReference>
     <ProjectReference Include="..\NetworkModules\NetworkModules.csproj">
       <Project>{f0d8f61c-743f-45eb-b3c5-b1935480071d}</Project>
       <Name>NetworkModules</Name>

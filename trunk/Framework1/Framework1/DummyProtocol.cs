@@ -7,23 +7,23 @@ using NetworkModules.Connection.Packet;
 
 namespace Framework1
 {
-    public class DummyProtocol:Protocol
+    public class DummyProtocol : Protocol
     {
 
         public DummyProtocol(Type elementType)
         {
-            ElementTypes = new List<Type>(1);
-            ElementTypes.Add(elementType);
-            ElementTypes.Add(elementType);
-            ElementTypes.Add(elementType);
+            PacketDefinition packetDefinition = new PacketDefinition();
+            packetDefinition.ElementTypes.Add(elementType);
+            packetDefinition.ElementTypes.Add(elementType);
+            packetDefinition.ElementTypes.Add(elementType);
+            PacketDefinitions.Add(packetDefinition);
+
         }
-
-
-        public override List<Type> ElementTypes { get; protected set; }
 
         public override void HandlePacket(Connection from, NetworkPacket networkPacket)
         {
-            
+            Console.WriteLine("Packet Recived");
         }
+
     }
 }

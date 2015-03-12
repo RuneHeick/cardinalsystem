@@ -53,6 +53,7 @@
     <Compile Include="Connection\Packet\PacketBuilder.cs" />
     <Compile Include="Connection\Packet\Element\PacketElement.cs" />
     <Compile Include="Connection\Packet\Element\Size.cs" />
+    <Compile Include="Connection\Protocol\PacketDefinition.cs" />
     <Compile Include="Connection\Protocol\Protocol.cs" />
     <Compile Include="Connection\Protocol\ProtocolManager.cs" />
     <Compile Include="DataCentricSocket\CommandSocket.cs" />

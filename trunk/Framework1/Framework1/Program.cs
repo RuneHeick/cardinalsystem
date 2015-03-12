@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FileModules;
 using FileModules.Event;
+using Intercom;
 using NetworkModules.Connection;
 using NetworkModules.Connection.Connector;
 using NetworkModules.Connection.Packet;
@@ -18,6 +19,7 @@ namespace Framework1
     {
         static void Main(string[] args)
         {
+            Console.WriteLine(SystemTester.GetStatus());
 
             /*
             ISettingManager manager = new SettingManager("Settings.txt");
@@ -32,7 +34,12 @@ namespace Framework1
             */
 
 
-            CommandCollection.Instance.CreateProtocolDefinition(); 
+            CommandCollection.Instance.CreateProtocolDefinition();
+
+            var col = CommandCollection.Instance.GetCollection();
+
+            CommandCollection.Instance.CheckCollection(col);
+
 
             ConnectionManager RemoteManager = new ConnectionManager(new IPEndPoint(IPAddress.Loopback, 9000));
             ConnectionManager conManager = new ConnectionManager(new IPEndPoint(IPAddress.Loopback, 9090));
@@ -40,7 +47,7 @@ namespace Framework1
             RemoteManager.RemoteConnectionCreated += NewConnection; 
 
 
-            Connection connection = conManager.GetConnection(new IPEndPoint(IPAddress.Loopback, 9000)); 
+            Connection connection = conManager.GetConnection(new IPEndPoint(IPAddress.Loopback, 9000), 5000); 
             connection.OnStatusChanged += StatusChanged;
 
             Thread.Sleep(100);
@@ -49,16 +56,17 @@ namespace Framework1
             var element1 = new DummyElement() {Data = new byte[] {1, 2, 3, 4}};
             packet1.Add(element1);
             packet1.Add(element1);
-            packet1.Add(element1); 
+            packet1.Add(element1);
+           
 
-            connection.Send(packet1);
+            while (true)
+            {
+                connection.Send(packet1);
 
-            Thread.Sleep(1000);
-
+                Console.ReadKey();    
+            }
             
-
-            Console.ReadKey();
-            connection.Close();
+            
         }
 
         private static void NewConnection(object sender, ConnectionEventArgs<Connection> e)
