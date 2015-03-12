@@ -6,6 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 using FileModules;
 using Intercom.Modules;
+using Intercom.Protocols;
+using Intercom.Protocols.Elements;
 using NetworkModules.Connection;
 using NetworkModules.Connection.Connector;
 using NetworkModules.Connection.Packet.Commands;
@@ -15,31 +17,36 @@ namespace Intercom
 {
     class MasterModule : INetworkModule
     {
-        private readonly ConnectionManager _connections;
+        private readonly ConnectionManager _connectionsManager;
+        private readonly SettingManager _networkSettings;
         private NetworkModule _networkModule;
 
-        public MasterModule(ConnectionManager connections, NetworkModule networkModule)
+        private WelcomeProtocol _protocol = new WelcomeProtocol(true);
+        private readonly List<Connection> _connections = new List<Connection>();
+
+
+        public MasterModule(ConnectionManager connections, SettingManager networkSettings, NetworkModule networkModule)
         {
-            _connections = connections;
+            _connectionsManager = connections;
+            _networkSettings = networkSettings;
             _networkModule = networkModule; 
             Initialization();
         }
 
         private void Initialization()
         {
-            CommandCollection commandCollection = CommandCollection.Instance;
-            commandCollection.ResetCommands();
-            //commandCollection.GetOrCreateCommand<>(); Create base protocoles for operation
-
-            commandCollection.CreateProtocolDefinition();
-            _connections.RemoteConnectionCreated += ConnectionEstablished; 
+            _connectionsManager.RemoteConnectionCreated += ConnectionEstablished; 
         }
 
         
         private void ConnectionEstablished(object sender, ConnectionEventArgs<Connection> e)
         {
-             // Add protocoles 
-
+            var connection = e.Connection;
+            lock (_connections)
+            {
+                _connections.Add(connection);
+                connection.Add(_protocol);
+            }
         }
 
 

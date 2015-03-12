@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using NetworkModules.Connection.Connections;
 using NetworkModules.Connection.Connector;
 using NetworkModules.Connection.Packet;
@@ -12,6 +13,7 @@ namespace NetworkModules.Connection
         private  TcpConnection _tcpConnection = null;
         private  UdpConnection _udpConnection = null;
         private readonly ConnectionManager _manager;
+        private readonly int _inactiveMaxTime;
         private ConnectionStatus _status = ConnectionStatus.Disconnected;
         private readonly object _tcpLock = new object();
         private readonly object _udpLock = new object();
@@ -48,9 +50,10 @@ namespace NetworkModules.Connection
             }
         }
         
-        internal Connection(TcpConnection tcpConnection, UdpConnection udpConnection, ConnectionManager manager)
+        internal Connection(TcpConnection tcpConnection, UdpConnection udpConnection, ConnectionManager manager, int inactiveMaxTime)
         {
             _manager = manager;
+            _inactiveMaxTime = inactiveMaxTime;
             RemoteEndPoint = udpConnection.RemoteEndPoint; 
             Setup();
   
@@ -61,6 +64,7 @@ namespace NetworkModules.Connection
 
         internal Connection(ConnectionManager manager, IPEndPoint remoteEndPoint)
         {
+            _inactiveMaxTime = Timeout.Infinite;
             _manager = manager;
             RemoteEndPoint = remoteEndPoint; 
             Setup();
@@ -79,12 +83,30 @@ namespace NetworkModules.Connection
         #region Protocol 
         public void Add(Protocol protocol)
         {
+            bool add = Protocols.Count == 0;
+
             Protocols.Add(protocol);
+            
+            if (add)
+            {
+                if (_tcpConnection != null)
+                    _tcpConnection.OnPacketRecived += OnPacketRecived;
+                if (_udpConnection != null)
+                    _udpConnection.OnPacketRecived += OnPacketRecived;
+            }
         }
 
         public void Remove(Protocol protocol)
         {
-                Protocols.Remove(protocol);
+            Protocols.Remove(protocol);
+
+            if (Protocols.Count == 0)
+            {
+                if (_tcpConnection != null)
+                    _tcpConnection.OnPacketRecived -= OnPacketRecived;
+                if (_udpConnection != null)
+                    _udpConnection.OnPacketRecived -= OnPacketRecived;
+            }
         }
 
         private void OnPacketRecived(object sender, PacketEventArgs e)
@@ -130,7 +152,7 @@ namespace NetworkModules.Connection
             lock (_tcpLock)
             {
                 if (_tcpConnection == null || _tcpConnection.Status == ConnectionStatus.Disconnected)
-                    AddTcp(_manager.TcpConnector.CreateConnection(RemoteEndPoint));
+                    AddTcp(_manager.TcpConnector.CreateConnection(RemoteEndPoint, _inactiveMaxTime));
                 packet.EndPoint = RemoteEndPoint;
                 _tcpConnection.Send(packet);
             }
@@ -160,7 +182,8 @@ namespace NetworkModules.Connection
                     _tcpConnection = connection;
                     Status = _tcpConnection.Status;
                     _tcpConnection.OnStatusChanged += TcpStatusChanged;
-                    _tcpConnection.OnPacketRecived += OnPacketRecived;
+                    if(Protocols.Count>0)
+                        _tcpConnection.OnPacketRecived += OnPacketRecived;
                 }
             }
         }
@@ -172,7 +195,8 @@ namespace NetworkModules.Connection
                 if (_udpConnection == null)
                 {
                     _udpConnection = connection;
-                    _udpConnection.OnPacketRecived += OnPacketRecived;
+                    if (Protocols.Count > 0)
+                        _udpConnection.OnPacketRecived += OnPacketRecived;
                 }
             }
         }

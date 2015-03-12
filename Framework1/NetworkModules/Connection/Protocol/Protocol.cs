@@ -9,7 +9,13 @@ namespace NetworkModules.Connection
 {
     public abstract class Protocol
     {
-        public abstract List<Type> ElementTypes { get; protected set; }
+
+        public Protocol()
+        {
+            PacketDefinitions = new List<PacketDefinition>();
+        }
+
+        public List<PacketDefinition> PacketDefinitions { get; protected set; }
 
         public abstract void HandlePacket(Connection from , NetworkPacket networkPacket);
 

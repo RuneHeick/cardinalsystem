@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
 using System.Linq;
@@ -6,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using NetworkModules.Connection.Connector;
 using NetworkModules.Connection.Packet;
+using Server.Utility;
 
 namespace NetworkModules.Connection
 {
@@ -13,7 +15,7 @@ namespace NetworkModules.Connection
     {
 
         List<Protocol> _protocols = new List<Protocol>(); 
-        
+
         public void PacketRecived(Connection sender, NetworkPacket packet)
         {
             lock (_protocols)
@@ -30,15 +32,25 @@ namespace NetworkModules.Connection
 
         private bool NeedPacket(Protocol protocol, NetworkPacket packet)
         {
-            var packetTypes = packet.Elements.ConvertAll((o) => o.GetType());
-            foreach (var elementType in protocol.ElementTypes)
+            foreach (var elementType in protocol.PacketDefinitions)
             {
-                if (packetTypes.Contains(elementType))
-                    packetTypes.Remove(elementType);
-                else
-                    return false;
+                var packetTypes = packet.Elements.ConvertAll((o) => o.GetType());
+                foreach (var type in elementType.ElementTypes)
+                {
+                    if (packetTypes.Contains(type))
+                    {
+                        packetTypes.Remove(type);
+                    }
+                    else
+                    {
+                        packetTypes = null; 
+                        break;
+                    }
+                }
+                if (packetTypes != null && packetTypes.Count == 0)
+                    return true;
             }
-            return true; 
+            return false; 
         }
 
 
@@ -59,5 +71,16 @@ namespace NetworkModules.Connection
             }
         }
 
+
+        public int Count
+        {
+            get
+            {
+                lock (_protocols)
+                {
+                    return _protocols.Count;
+                }
+            }
+        }
     }
 }

@@ -13,11 +13,14 @@ namespace Intercom
         private ConnectionManager _connections;
         private NetworkModule _networkModule;
 
-        public SlaveModule(ConnectionManager connections, NetworkModule networkModule)
+        public SlaveModule(ConnectionManager connections,Connection masterConnection ,NetworkModule networkModule)
         {
             _networkModule = networkModule; 
             _connections = connections;
         }
+
+
+
         public void Dispose()
         {
             _networkModule = null; 

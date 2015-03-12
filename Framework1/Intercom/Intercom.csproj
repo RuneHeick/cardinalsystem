@@ -32,6 +32,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Management" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -40,10 +41,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Modules\INetworkModule.cs" />
-    <Compile Include="Modules\MasterModule.cs" />
+    <Compile Include="Modules\Master\MasterModule.cs" />
     <Compile Include="NetworkModule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Modules\SlaveModule.cs" />
+    <Compile Include="Modules\Slave\SlaveModule.cs" />
+    <Compile Include="Protocols\Elements\ClusterElement.cs" />
+    <Compile Include="Protocols\Elements\HelloElement.cs" />
+    <Compile Include="Protocols\Elements\PCommandElement.cs" />
+    <Compile Include="Protocols\WelcomeProtocol.cs" />
+    <Compile Include="SystemTester.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BaseInterfaces\BaseInterfaces.csproj">

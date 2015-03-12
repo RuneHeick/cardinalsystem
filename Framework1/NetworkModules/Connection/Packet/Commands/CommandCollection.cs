@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 
 namespace NetworkModules.Connection.Packet.Commands
 {
@@ -121,6 +122,55 @@ namespace NetworkModules.Connection.Packet.Commands
             return null;
         }
 
+        public byte[] GetCollection()
+        {
+            lock (_commandsDictionary)
+            {
+                List<byte> data = new List<byte>();
+                var values = _commandsDictionary.Values;
+
+                foreach (var value in values)
+                {
+                    data.Add(value.Command);
+                    data.AddRange(UTF8Encoding.UTF8.GetBytes(value.Name));
+                    data.Add(0);
+                }
+                return data.ToArray();
+            }
+        }
+
+        public void CheckCollection(byte[] data)
+        {
+           
+            lock (_commandsDictionary)
+            {
+                var known_values = _commandsDictionary.Values.ToDictionary((o)=>o.Name);
+
+                var items = 0; 
+                for (int i = 0; i < data.Length;)
+                {
+                    byte command = data[i];
+                    int endindex = Array.IndexOf(data,(byte) 0, i + 1);
+                    string name = UTF8Encoding.UTF8.GetString(data, i + 1, endindex-(i + 1));
+                    i = endindex + 1;
+                    items++;
+
+                    if (known_values.ContainsKey(name))
+                    {
+                        known_values[name].Command = command; 
+                    }
+                    else
+                    {
+                        throw new NotSupportedException("A Command "+name+" is not supported");
+                    }
+                }
+
+                if(known_values.Count != items)
+                    throw new NotSupportedException("Not the same amount of commands in collection");
+            }
+        }
+
+
         private class CommandId<T> : ICommandId where T : PacketElement, new()
         {
             public CommandId(string name, byte command)
@@ -129,7 +179,7 @@ namespace NetworkModules.Connection.Packet.Commands
                 Command = command;
             }
 
-            public byte Command { get; private set; }
+            public byte Command { get; set; }
 
             public string Name { get; private set; }
 

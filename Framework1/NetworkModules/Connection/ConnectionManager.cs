@@ -65,7 +65,7 @@ namespace NetworkModules.Connection
         }
 
 
-        public Connection GetConnection(IPEndPoint remoteEndPoint)
+        public Connection GetConnection(IPEndPoint remoteEndPoint, int inactiveMaxTime)
         {
             lock (_connections)
             {
@@ -73,9 +73,9 @@ namespace NetworkModules.Connection
                     return _connections[remoteEndPoint];
 
                 var udpConnection = UdpConnector.GetConnection(remoteEndPoint);
-                var tcpConnection = TcpConnector.CreateConnection(remoteEndPoint);
-                
-                Connection connection = new Connection(tcpConnection, udpConnection, this);
+                var tcpConnection = TcpConnector.CreateConnection(remoteEndPoint, inactiveMaxTime);
+
+                Connection connection = new Connection(tcpConnection, udpConnection, this, inactiveMaxTime);
                 _connections.Add(remoteEndPoint, connection);
                 return connection;
             }
