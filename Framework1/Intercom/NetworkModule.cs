@@ -30,14 +30,17 @@ namespace Intercom
             _localEndPoint = localEndPoint.Value.CreateIpEndPoint();
             _connections = new ConnectionManager(_localEndPoint);
 
+            Initialization();
+        }
+
+        private void SetupCommands()
+        {
             CommandCollection commandCollection = CommandCollection.Instance;
             commandCollection.ResetCommands();
             commandCollection.GetOrCreateCommand<HelloElement>();
             commandCollection.GetOrCreateCommand<ClusterElement>();
             commandCollection.GetOrCreateCommand<PCommandElement>();
             commandCollection.CreateProtocolDefinition();
-
-            Initialization();
         }
 
         private void Initialization()

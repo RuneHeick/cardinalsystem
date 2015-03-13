@@ -21,8 +21,9 @@ namespace Intercom
         private readonly SettingManager _networkSettings;
         private NetworkModule _networkModule;
 
-        private WelcomeProtocol _protocol = new WelcomeProtocol(true);
         private readonly List<Connection> _connections = new List<Connection>();
+        private readonly WelcomeProtocol _mainProtocol = new WelcomeProtocol(true);
+        private readonly List<Protocol> _protocolsToAdd = new List<Protocol>(); 
 
 
         public MasterModule(ConnectionManager connections, SettingManager networkSettings, NetworkModule networkModule)
@@ -30,31 +31,55 @@ namespace Intercom
             _connectionsManager = connections;
             _networkSettings = networkSettings;
             _networkModule = networkModule; 
+            _protocolsToAdd.Add(_mainProtocol);
             Initialization();
         }
 
-        private void Initialization()
+        public void AddProtocols(IEnumerable<Protocol> protocols)
         {
-            _connectionsManager.RemoteConnectionCreated += ConnectionEstablished; 
+            lock(_protocolsToAdd)
+                _protocolsToAdd.AddRange(protocols);
         }
 
-        
+
+        private void Initialization()
+        {
+            _connectionsManager.RemoteConnectionCreated += ConnectionEstablished;
+            _mainProtocol.ClustorChanged += ClustorChanged;
+        }
+
+        private void ClustorChanged(object sender, ClustorEventArgs e)
+        {
+            
+        }
+
         private void ConnectionEstablished(object sender, ConnectionEventArgs<Connection> e)
         {
             var connection = e.Connection;
             lock (_connections)
-            {
                 _connections.Add(connection);
-                connection.Add(_protocol);
-            }
+            lock (_protocolsToAdd)
+                connection.AddRange(_protocolsToAdd);
+
+            connection.OnStatusChanged+= ConnectionChanged;
+
         }
 
-
+        private void ConnectionChanged(object sender, ConnectionEventArgs e)
+        {
+            if(e.Status == ConnectionStatus.Disconnected)
+                Console.WriteLine("Lost connection to slave Sever");
+        }
 
 
         public void Dispose()
         {
+            lock (_connections)
+                foreach (var connection in _connections)
+                {
+                    connection.RemoveRange(_protocolsToAdd);
+                }
             _networkModule = null; 
-        }
+        } 
     }
 }
