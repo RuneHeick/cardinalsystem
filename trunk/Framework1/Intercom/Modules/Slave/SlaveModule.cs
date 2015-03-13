@@ -12,6 +12,7 @@ namespace Intercom
     {
         private ConnectionManager _connections;
         private NetworkModule _networkModule;
+        
 
         public SlaveModule(ConnectionManager connections,Connection masterConnection ,NetworkModule networkModule)
         {

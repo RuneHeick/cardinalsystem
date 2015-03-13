@@ -82,5 +82,21 @@ namespace NetworkModules.Connection
                 }
             }
         }
+
+        public void AddRange(IEnumerable<Protocol> protocols)
+        {
+            lock (_protocols)
+            {
+                _protocols.AddRange(protocols);
+            }
+        }
+
+        public void RemoveRange(IEnumerable<Protocol> protocols)
+        {
+            lock (_protocols)
+            {
+                _protocols.RemoveAll(protocols.Contains);
+            }
+        }
     }
 }

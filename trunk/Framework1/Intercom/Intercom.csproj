@@ -47,7 +47,9 @@
     <Compile Include="Modules\Slave\SlaveModule.cs" />
     <Compile Include="Protocols\Elements\ClusterElement.cs" />
     <Compile Include="Protocols\Elements\HelloElement.cs" />
+    <Compile Include="Protocols\Elements\MasterRedirectElement.cs" />
     <Compile Include="Protocols\Elements\PCommandElement.cs" />
+    <Compile Include="Protocols\Eventhanlder.cs" />
     <Compile Include="Protocols\WelcomeProtocol.cs" />
     <Compile Include="SystemTester.cs" />
   </ItemGroup>

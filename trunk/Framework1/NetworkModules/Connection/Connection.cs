@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -96,6 +98,21 @@ namespace NetworkModules.Connection
             }
         }
 
+        public void AddRange(IEnumerable<Protocol> protocols)
+        {
+            bool add = Protocols.Count == 0;
+
+            Protocols.AddRange(protocols);
+
+            if (add)
+            {
+                if (_tcpConnection != null)
+                    _tcpConnection.OnPacketRecived += OnPacketRecived;
+                if (_udpConnection != null)
+                    _udpConnection.OnPacketRecived += OnPacketRecived;
+            }
+        }
+
         public void Remove(Protocol protocol)
         {
             Protocols.Remove(protocol);
@@ -108,6 +125,19 @@ namespace NetworkModules.Connection
                     _udpConnection.OnPacketRecived -= OnPacketRecived;
             }
         }
+        public void RemoveRange(IEnumerable<Protocol> protocol)
+        {
+            Protocols.RemoveRange(protocol);
+
+            if (Protocols.Count == 0)
+            {
+                if (_tcpConnection != null)
+                    _tcpConnection.OnPacketRecived -= OnPacketRecived;
+                if (_udpConnection != null)
+                    _udpConnection.OnPacketRecived -= OnPacketRecived;
+            }
+        }
+
 
         private void OnPacketRecived(object sender, PacketEventArgs e)
         {
