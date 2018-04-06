@@ -43,8 +43,8 @@ namespace ServerTest
         [TestInitialize()]
         public void MyTestInitialize()
         {
-            NetworkInterface1 = new NIC(new IPEndPoint(IPAddress.Loopback,5050));
-            NetworkInterface2 = new NIC(new IPEndPoint(IPAddress.Loopback, 5051));
+            NetworkInterface1 = new NIC(new IPEndPoint(IPAddress.Loopback,5060));
+            NetworkInterface2 = new NIC(new IPEndPoint(IPAddress.Loopback, 5061));
         }
         //
         // Use TestCleanup to run code after each test has run

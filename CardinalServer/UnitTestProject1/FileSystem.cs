@@ -50,10 +50,10 @@ namespace UnitTestProject1
 
             try
             {
-                con.Save("C:\\test.txt", data);
+                con.Save("D:\\CardinalSystem\\CardinalServer\\UnitTestProject1\\bin\\Debug\\Data", data);
                 
             }
-            catch
+            catch(Exception e)
             {
                 Assert.Fail();
             }

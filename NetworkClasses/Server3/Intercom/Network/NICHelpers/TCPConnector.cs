@@ -54,13 +54,13 @@ namespace Server3.Intercom.Network.NICHelpers
                 var socket = _listener.EndAcceptTcpClient(ar);
                 var info = AddClient(socket, ((IPEndPoint) socket.Client.RemoteEndPoint).Address, false);
                 StartRead(info);
+                _listener.BeginAcceptTcpClient(AsyncAcceptClientComplete, null);
             }
-            catch (Exception)
+            catch (Exception e)
             {
-
                 // ignored
             }
-            _listener.BeginAcceptTcpClient(AsyncAcceptClientComplete, null);
+    
         }
 
         public void Send(NetworkPacket packet)
@@ -95,7 +95,7 @@ namespace Server3.Intercom.Network.NICHelpers
                     ClientInfo info = AddClient(new TcpClient(), packet.Address.Address, true);
                     lock(info)
                         info.ToSend.Add(packet);
-                    info.Client.BeginConnect(packet.Address.Address, packet.Address.Port, AsyncConnectionComplete, info);
+                    info.Client.BeginConwnect(packet.Address.Address, packet.Address.Port, AsyncConnectionComplete, info);
                 }
             }
         }
