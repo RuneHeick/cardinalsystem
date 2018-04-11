@@ -4,9 +4,9 @@ using System.Text;
 
 namespace MatrixSystem
 {
-    public enum MatrixTypes
+    public enum PublicSyncTypes
     {
-        POSITION,
+        POSITION = 0,
         SECTOR,
         LIFE, 
         DAMAGE,

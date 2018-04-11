@@ -1,16 +1,27 @@
-﻿using MatrixSystem.Network;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using Networking.Util;
+using MatrixSystem.ObjectCreation;
+using MatrixSystem.Network;
 
 namespace MatrixSystem.SyncManagers
 {
     class GameObjectSyncObject: IDisposable
     {
+        public static uint PublicSyncMask; 
+    
         public GameObject gameObject { get; set; }
 
         public uint SyncCounter { get; set; }
+
+        static GameObjectSyncObject()
+        {
+            PublicSyncMask = 0;
+            for (int i = 0; i < (uint)PublicSyncTypes.MAX_VALUE; i++)
+                PublicSyncMask |= (uint)(1 << i);
+        }
 
         private List<byte[]> _syncPacket = new List<byte[]>();
         public List<byte[]> SyncPacket
@@ -19,7 +30,9 @@ namespace MatrixSystem.SyncManagers
             {
                 if(_syncPacket.Count == 0)
                 {
+                    List<byte[]> header = NetworkUpdateHandler.GetSyncHeader(gameObject);
                     List<byte[]> item = gameObject.getBytes((uint)SyncMask);
+                    _syncPacket.AddRange(header);
                     _syncPacket.AddRange(item);
                     SyncMask = 0;
                 }
@@ -34,8 +47,27 @@ namespace MatrixSystem.SyncManagers
             {
                 if(_fullPacket.Count == 0)
                 {
+                    List<byte[]> header = NetworkUpdateHandler.GetFullHeader(gameObject);
                     List<byte[]> item = gameObject.getBytes(uint.MaxValue);
+                    _fullPacket.AddRange(header);
                     _fullPacket.AddRange(item);
+                    SyncMask = 0;
+                }
+                return _fullPacket;
+            }
+        }
+
+        private List<byte[]> _fullPublicPacket = new List<byte[]>();
+        public List<byte[]> FullPublicPacket
+        {
+            get
+            {
+                if (_fullPublicPacket.Count == 0)
+                {
+                    List<byte[]> header = NetworkUpdateHandler.GetFullHeader(gameObject);
+                    List<byte[]> item = gameObject.getBytes(PublicSyncMask);
+                    _fullPublicPacket.AddRange(header);
+                    _fullPublicPacket.AddRange(item);
                     SyncMask = 0;
                 }
                 return _fullPacket;
@@ -50,12 +82,12 @@ namespace MatrixSystem.SyncManagers
 
             SyncCounter = 0;
             SyncMask = 0; 
-            gameObject.MatrixChanged += GameObject_MatrixChanged;
+            gameObject.GameObjectDataChanged += GameObject_MatrixChanged;
         }
 
         public void Dispose()
         {
-            gameObject.MatrixChanged -= GameObject_MatrixChanged;
+            gameObject.GameObjectDataChanged -= GameObject_MatrixChanged;
         }
 
         private void GameObject_MatrixChanged(GameObject obj, ulong changedArray)
@@ -65,36 +97,12 @@ namespace MatrixSystem.SyncManagers
                 SyncCounter++;
                 _syncPacket = new List<byte[]>();
                 _fullPacket = new List<byte[]>();
+                _fullPublicPacket = new List<byte[]>();
             }
 
             SyncMask |= changedArray; 
         }
-
     }
-
-    public class SyncClient
-    {
-        public VirtualSocket Socket { get; set; }
-        
-        public List<ObjectSubscription> Subscriptions { get; set; }
-        public Dictionary<uint, ObjectSubscription> SubCache { get; set; }
-
-        public void Add(uint id)
-        {
-            ObjectSubscription item = new ObjectSubscription(id) { IsSubscription = true };
-            Subscriptions.Add(item);
-            SubCache.Add(id,item);
-        }
-
-
-        public SyncClient(VirtualSocket socket)
-        {
-            this.Socket = socket;
-            Subscriptions = new List<ObjectSubscription>();
-            SubCache = new Dictionary<uint, ObjectSubscription>();
-        }
-    }
-
 
     public class SyncManager
     {
@@ -104,6 +112,7 @@ namespace MatrixSystem.SyncManagers
 
         private uint _updateCount = 1;
         private List<SyncClient> subscriptions = new List<SyncClient>();
+        private List<GameObject> removeGameObject = new List<GameObject>();
         
         public SyncManager()
         {
@@ -113,8 +122,15 @@ namespace MatrixSystem.SyncManagers
 
         public void UpdateGameLoop()
         {
+            //Read in packets from neighbouring sectors 
+
+            //Update gameloop for the gameobjects 
             controller.UpdateMatrix();
+            //gennerate packet with sync data to the clients 
             UpdateSync();
+
+            //Clean up after Sync
+            GameLoopCleanUp();            
         }
 
         public void Add(GameObject gameObject)
@@ -138,33 +154,55 @@ namespace MatrixSystem.SyncManagers
             subscriptions.Add(sync);
         }
 
+        public void RemoveSubscription(SyncClient sync)
+        {
+            subscriptions.Remove(sync);
+        }
+
+        public void AddBorderSubscription(SyncClient sync, ZoneTypes syncZone)
+        {
+            neighbourSectorSync.AddSyncItem(sync, syncZone);
+        }
+
+        public void RemoveBorderSubscription(SyncClient sync, ZoneTypes syncZone)
+        {
+            neighbourSectorSync.RemoveSyncItem(sync, syncZone);
+        }
+
         private void Controller_OnItemZoneChanged(GameObject gameObject, ObjectMatrix.Types.PositionValue position, ZoneTypes currentZone, ZoneTypes oldZone)
         {
+            neighbourSectorSync.GameObject_OnItemZoneChanged(gameObject, position, currentZone, oldZone);
             if(currentZone == ZoneTypes.OUT_OF_AREA)
             {
-                Remove(gameObject);
-            }
-            else
-            {
-                
+                removeGameObject.Add(gameObject);
             }
         }
 
         private void UpdateSync()
         {
-            foreach (var sub in subscriptions)
+            foreach (var sub in subscriptions.Concat(neighbourSectorSync))
             {
-                List<byte[]> packet = getClientPacket(sub, _updateCount);
+                ComposedMessage packet = getClientPacket(sub, _updateCount);
    
                 sub.Socket.Send(packet);
             }
+
             _updateCount++;
         }
 
-        private List<byte[]> getClientPacket(SyncClient item, uint SyncCount)
+        private void GameLoopCleanUp()
+        {
+            neighbourSectorSync.ServiceAfterSync();
+            foreach(var gameObject in removeGameObject)
+            {
+                Remove(gameObject);
+            }
+        }
+
+        private ComposedMessage getClientPacket(SyncClient item, uint SyncCount)
         {
             List<uint> close_ids = new List<uint>();
-            List<byte[]> bytes = new List<byte[]>();
+            ComposedMessage bytes = new ComposedMessage();
             List<ObjectSubscription> needRemoveSub = new List<ObjectSubscription>();
             foreach (var objectId in item.Subscriptions)
             {
@@ -175,7 +213,7 @@ namespace MatrixSystem.SyncManagers
                     {
                         objectId.LastUpdateCounter = SyncCount;
                         controller.GetClose(gameItem.gameObject, (GameObject) => UpdateCache(item.SubCache, GameObject, SyncCount));
-                        UpdatePacket(bytes, gameItem, objectId);
+                        UpdatePacket(bytes, gameItem, objectId, true);
                     }
                     else
                     {
@@ -184,7 +222,7 @@ namespace MatrixSystem.SyncManagers
                 }
             }
 
-            needRemoveSub.ForEach((i) => item.Subscriptions.Remove(i));
+            needRemoveSub.ForEach((i) => item.Remove(i.Id));
 
             List<uint> needRemove = new List<uint>();
             foreach (var packetElement in item.SubCache.Values)
@@ -196,7 +234,7 @@ namespace MatrixSystem.SyncManagers
                         GameObjectSyncObject gameItem;
                         if (dictionary.TryGetValue(packetElement.Id, out gameItem))
                         {
-                            UpdatePacket(bytes, gameItem, packetElement);
+                            UpdatePacket(bytes, gameItem, packetElement, false);
                         }
                         else
                         {
@@ -226,7 +264,7 @@ namespace MatrixSystem.SyncManagers
             item.LastUpdateCounter = syncCount;
         }
 
-        private void UpdatePacket(List<byte[]> packet, GameObjectSyncObject gameItem, ObjectSubscription objectId)
+        private void UpdatePacket(ComposedMessage packet, GameObjectSyncObject gameItem, ObjectSubscription objectId, bool privatePacket)
         {
             if (objectId.LastSync == gameItem.SyncCounter)
             {
@@ -238,10 +276,12 @@ namespace MatrixSystem.SyncManagers
             }
             else
             {
-                packet.AddRange(gameItem.FullPacket);
+                if(privatePacket)
+                    packet.AddRange(gameItem.FullPacket);
+                else
+                    packet.AddRange(gameItem.FullPublicPacket);
             }
             objectId.LastSync = gameItem.SyncCounter;
         }
-        
     }
 }

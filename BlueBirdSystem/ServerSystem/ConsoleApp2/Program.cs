@@ -1,4 +1,6 @@
 ﻿using MatrixSystem;
+using MatrixSystem.Network;
+using MatrixSystem.ObjectCreation;
 using MatrixSystem.ObjectMatrix.Types;
 using MatrixSystem.SyncManagers;
 using System;
@@ -18,17 +20,20 @@ namespace ConsoleApp2
             syncManager.controller.OnItemZoneChanged += Con_OnItemZoneChanged;
 
             InitTest();
-
+            ulong totalBytes = 0; 
             for (int a = 0; a < ITERATIONS; a++)
             {
                 Stopwatch watch = new Stopwatch();
+                VirtualSocket.BytesGennerated = 0;  
                 watch.Start();
 
                 syncManager.UpdateGameLoop();
 
                 watch.Stop();
-                Console.WriteLine("Elapse: " + watch.ElapsedMilliseconds + " ms");
+                totalBytes += VirtualSocket.BytesGennerated;
+                Console.WriteLine("Elapse: " + watch.ElapsedMilliseconds + " ms\t Bytes: "+ VirtualSocket.BytesGennerated);
             }
+            Console.WriteLine("Avg Bytes/sec: " + (totalBytes/ ITERATIONS)*2);
 
             Console.ReadKey();
         }
@@ -36,6 +41,16 @@ namespace ConsoleApp2
         public static void InitTest()
         {
             Random random = new Random();
+
+            UInt16 hash = GameObjectCreator.getObjectHash(typeof(TestGameObject));
+            GameObject created = GameObjectCreator.CreateNewObject(hash);
+
+            for (uint i = 0; i < 8; i++)
+            {
+                SyncClient client = new SyncClient(new MatrixSystem.Network.VirtualSocket());
+                syncManager.AddBorderSubscription(client, (ZoneTypes)((uint)ZoneTypes.IN_SYNC_ZONE_UPPER_LEFT+i));
+            }
+
             for (int i = 0; i < 4000; i++)
             {
                 int x = random.Next(1, 100);
@@ -48,10 +63,11 @@ namespace ConsoleApp2
                 syncManager.Add(obj);
             }
 
+
             for (uint i = 0; i < 100; i++)
             {
                 SyncClient client = new SyncClient(new MatrixSystem.Network.VirtualSocket());
-                for(uint k = 1+i; k<500+i; k++)
+                for(uint k = 1+i; k<=200+i; k++)
                      client.Add(k);
                 
                 syncManager.AddSubscription(client);
@@ -60,7 +76,7 @@ namespace ConsoleApp2
 
         private static void Con_OnItemZoneChanged(MatrixSystem.GameObject gameObject, MatrixSystem.ObjectMatrix.Types.PositionValue position, MatrixSystem.ZoneTypes zoneType, MatrixSystem.ZoneTypes oldZone)
         {
-            Console.WriteLine("ID \t"+gameObject.ObjectID.ToString()+"\t MOVED FROM "+oldZone.ToString()+" MOVE TO: "+zoneType.ToString());
+            //Console.WriteLine("ID \t"+gameObject.ObjectID.ToString()+"\t MOVED FROM "+oldZone.ToString()+" MOVE TO: "+zoneType.ToString());
         }
     }
 }

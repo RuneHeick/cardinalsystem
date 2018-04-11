@@ -6,7 +6,7 @@ namespace MatrixSystem
 {
     public interface IMatrixItem
     {
-        MatrixTypes Type { get; }
+        PublicSyncTypes Type { get; }
 
         byte[] getBytes();
 

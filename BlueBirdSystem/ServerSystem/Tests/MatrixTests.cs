@@ -16,7 +16,7 @@ namespace Tests
         public void TestGameLoopItem()
         {
             MatrixSystem.GridController con = new MatrixSystem.GridController();
-            con.InitTest();
+            
 
             Stopwatch watch = new Stopwatch();
             watch.Start();

@@ -25,10 +25,10 @@ namespace MatrixSystem
             set
             {
                 if (gameObject != null)
-                    gameObject.MatrixChanged -= location_check;
+                    gameObject.GameObjectDataChanged -= location_check;
                 gameObject = value;
                 if (gameObject != null)
-                    gameObject.MatrixChanged += location_check;
+                    gameObject.GameObjectDataChanged += location_check;
             }
         } 
 
@@ -37,7 +37,7 @@ namespace MatrixSystem
 
         private void location_check(GameObject game, UInt64 changedArray)
         {
-            if ((changedArray & (1 << (int)MatrixTypes.POSITION)) != 0)
+            if ((changedArray & (1 << (int)PublicSyncTypes.POSITION)) != 0)
             {
                 PositionValue position = game.Position;
                 if (position != null)
@@ -50,7 +50,7 @@ namespace MatrixSystem
         public void Dispose()
         {
             if (gameObject != null)
-                gameObject.MatrixChanged -= location_check;
+                gameObject.GameObjectDataChanged -= location_check;
         }
     }
 

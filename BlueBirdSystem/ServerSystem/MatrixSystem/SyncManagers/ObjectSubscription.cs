@@ -11,7 +11,7 @@
         public ObjectSubscription(uint id)
         {
             Id = id;
-            LastSync = 0; 
+            LastSync = uint.MaxValue; 
         }
 
     }

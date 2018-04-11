@@ -6,9 +6,9 @@ namespace MatrixSystem
 
     public class Matrix
     {
-        private IMatrixItem[] items = new IMatrixItem[((int)MatrixTypes.MAX_VALUE)+1]; 
+        private IMatrixItem[] items = new IMatrixItem[((int)PublicSyncTypes.MAX_VALUE)+1]; 
                           
-        public T GetItem<T>(MatrixTypes type) where T : IMatrixItem
+        public T GetItem<T>(PublicSyncTypes type) where T : IMatrixItem
         {
             return (T)items[(int)type];
         }
@@ -38,7 +38,7 @@ namespace MatrixSystem
                     }
                 }
             }
-            list.Add(new byte[] { (byte)MatrixTypes.MAX_VALUE });
+            list.Add(new byte[] { (byte)PublicSyncTypes.MAX_VALUE });
             return list;
         }
 
@@ -47,7 +47,7 @@ namespace MatrixSystem
             while (data.Length > startIndex)
             {
                 byte id = data[startIndex];
-                if (id < (byte)MatrixTypes.MAX_VALUE)
+                if (id < (byte)PublicSyncTypes.MAX_VALUE)
                 {
                     if (items[id] == null)
                         createEmptyItem(id);

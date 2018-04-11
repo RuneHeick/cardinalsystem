@@ -62,7 +62,6 @@ namespace NetworkingLayer
             }
         }
 
-
         private void HandleSocketEvents(INetwork client, SocketEvent arg)
         {
             if(arg.State == ConnectionState.Disconnected)
@@ -79,6 +78,5 @@ namespace NetworkingLayer
             OnSocketEvent?.Invoke(client, arg);
         }
         
-
     }
 }

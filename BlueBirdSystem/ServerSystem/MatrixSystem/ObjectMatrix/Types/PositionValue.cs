@@ -6,7 +6,7 @@ namespace MatrixSystem.ObjectMatrix.Types
 {
     public class PositionValue : IMatrixItem
     {
-        public MatrixTypes Type => MatrixTypes.POSITION;
+        public PublicSyncTypes Type => PublicSyncTypes.POSITION;
 
         public double X {
             get;

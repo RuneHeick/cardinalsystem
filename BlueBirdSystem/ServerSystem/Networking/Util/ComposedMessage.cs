@@ -31,12 +31,19 @@ namespace Networking.Util
             _length += message.Length;
         }
 
+        public void AddRange(List<byte[]> data)
+        {
+            _messageParts.AddRange(data);
+            foreach(var bl in data)
+                _length += bl.Length;
+        }
 
         public void Add(byte[] message)
         {
             _messageParts.Add(message);
             _length += message.Length;
         }
+
 
      
     }

@@ -25,13 +25,19 @@ namespace MatrixSystem
 
         public void UpdateObject()
         {
-            Position.X = Position.X + ((20000 * random.NextDouble()) - (20000/2));
-            MatrixChanged?.Invoke(this, (1 << (int)MatrixTypes.POSITION));
+            //if (ObjectID == 1)
+            {
+                Position.X = Position.X + ((20000 * random.NextDouble()) - (20000 / 2));
+                Position.Y = Position.Y + ((20000 * random.NextDouble()) - (20000 / 2));
+                GameObjectDataChanged?.Invoke(this, (1 << (int)PublicSyncTypes.POSITION));
+            }
         }
 
         public List<byte[]> getBytes(uint mask)
         {
-            return new List<byte[]> { new byte[20] };
+            if(mask != (1 << (int)PublicSyncTypes.POSITION))
+                return new List<byte[]> { new byte[8 * 2 + 500] };
+            return new List<byte[]> { new byte[8*2+5] };
         }
 
         public int SetBytes(byte[] data, int startIndex)
@@ -39,7 +45,7 @@ namespace MatrixSystem
             return startIndex;
         }
 
-        public event GameObjectChanged MatrixChanged;
+        public event GameObjectChanged GameObjectDataChanged;
 
     }
 }
